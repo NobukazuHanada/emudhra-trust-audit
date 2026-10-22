@@ -1,0 +1,3 @@
+# Keep source and data stable across Git checkouts. The data loader also
+# accepts CRLF/CR from external copies without ignoring other content changes.
+* text=auto eol=lf

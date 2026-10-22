@@ -93,7 +93,7 @@ user or feeding into an editor.
 4. Separate "known indicator" from "suspicious" explicitly. A `verify=False`
    match may be a deliberate test fixture; say that it needs confirmation.
 5. Report undetermined versions as undetermined, never as safe.
-6. Use `ca-trust-audit explain <FINDING_ID>` for the meaning, method, fix and
+6. Use `emudhra-trust-audit explain <FINDING_ID>` for the meaning, method, fix and
    limits of any finding, including the rule-derived `PROJECT-TLS-*` ones.
 
 ## Hard rules

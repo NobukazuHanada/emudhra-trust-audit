@@ -25,7 +25,9 @@ def build(destination: Path) -> None:
         )
         shutil.copytree(ROOT / "data", runtime / "data")
         (runtime / "bin").mkdir()
-        shutil.copy2(ROOT / "bin" / "ca-trust-audit.py", runtime / "bin" / "ca-trust-audit.py")
+        shutil.copy2(
+            ROOT / "bin" / "emudhra-trust-audit.py", runtime / "bin" / "emudhra-trust-audit.py"
+        )
         for filename in ("LICENSE", "NOTICE"):
             shutil.copy2(ROOT / filename, target / filename)
 

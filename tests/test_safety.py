@@ -101,7 +101,8 @@ def test_errors_are_json_without_input_disclosure(args, capsys):
     assert json.loads(captured.out)["exit_code"] == 3
 
 
-def test_portable_skills_work_without_checkout(tmp_path):
+@pytest.mark.parametrize("crlf", [False, True])
+def test_portable_skills_work_without_checkout(tmp_path, crlf):
     build = subprocess.run(
         [sys.executable, str(REPO_ROOT / "scripts/build_skills.py"), str(tmp_path / "build")],
         capture_output=True,
@@ -110,6 +111,9 @@ def test_portable_skills_work_without_checkout(tmp_path):
     for name in ("endpoint-trust-audit", "project-trust-audit"):
         standalone = tmp_path / name
         shutil.copytree(tmp_path / "build" / name, standalone)
+        if crlf:
+            for path in (standalone / "scripts" / "data").rglob("*.json"):
+                path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
         before = {
             p.relative_to(standalone): p.read_bytes() for p in standalone.rglob("*") if p.is_file()
         }

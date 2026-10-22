@@ -66,7 +66,7 @@ def render_json(report: Report, *, indent: int = 2) -> str:
 
 def render_text(report: Report, *, color: bool = False) -> str:
     lines: List[str] = []
-    lines.append("ca-trust-audit %s - %s" % (report.tool_version, report.tool))
+    lines.append("emudhra-trust-audit %s - %s" % (report.tool_version, report.tool))
     lines.append("scope:   %s" % report.scope)
     lines.append("started: %s" % report.started_at)
     for key, value in sorted(report.context.items()):
@@ -199,7 +199,7 @@ def render_sarif(report: Report) -> str:
             {
                 "tool": {
                     "driver": {
-                        "name": "ca-trust-audit",
+                        "name": "emudhra-trust-audit",
                         "version": __version__,
                         "rules": list(rules.values()),
                     }

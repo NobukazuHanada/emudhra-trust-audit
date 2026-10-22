@@ -1,107 +1,138 @@
-# ca-trust-audit
+[English](README.md) | [日本語](README.ja.md)
 
-[eMudhra中間CA鍵の侵害](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449)に関する、ローカル・読み取り専用の監査ツールと独立した2つのAgent Skillsです。マルウェア感染の検査ではありません。
+# emudhra-trust-audit
 
-- **endpoint-trust-audit**: macOS / Linux / WindowsのCAストア、CA上書き環境変数、TLS設定、ランタイム・CLIの調査。
-- **project-trust-audit**: 指定プロジェクトの依存、ロックファイル、CAバンドル、ビルド・開発ツール、コンテナ・CI・TLS関連設定の静的調査。
+**An unofficial, independent community project. This is not an eMudhra tool and is not affiliated with or endorsed by eMudhra.**
 
-Python 3.9以上、実行時の追加依存なし。既定では外部コマンド・ネットワーク・ファイル書き込みなし。自動修復はしません。これは初期版であり、**「検出なし」は「安全」の証明ではありません**。
+A local, read-only audit tool and two independent Agent Skills for the [eMudhra intermediate CA key compromise](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449). This is not a malware scanner.
 
-## すぐ実行する
+- **endpoint-trust-audit** inspects CA stores, CA override environment variables, TLS settings, runtimes and developer CLIs on macOS, Linux and Windows.
+- **project-trust-audit** statically inspects a project's dependencies, lockfiles, CA bundles, build and development tools, containers, CI and TLS settings.
 
-ソース一式を取得し、そのディレクトリから実行します。Windowsでは `python3 -B` を `py -3 -B` に読み替えてください。パスに空白がある場合は引用符で囲みます。
+Requires Python 3.9 or later, with no runtime dependencies beyond the standard library. By default, audits execute no external commands, make no network connections and write no files. There is no automatic remediation. This is an early release: **“not detected” does not mean “safe.”**
+
+## Supported environments
+
+Targets macOS, Linux and Windows with Python 3.9 or later. Python 3.9 remains a legacy compatibility target; this project does not provide maintenance or security updates for Python itself. Use a maintained Python release for new installations. CI covers Python 3.9, 3.12 and 3.14 on Ubuntu 22.04, macOS latest and Windows latest. Linux is pinned to 22.04 because Ubuntu latest moved to 26.04, where setup-python could not obtain Python 3.9. This does not establish support for every OS release or every Python minor version. Mocked store tests in CI do not replace validation of all clients on a real endpoint.
+
+## Quick start
+
+Clone the source and run from its root. On Windows, replace `python3 -B` with `py -3 -B`. Quote paths containing spaces.
 
 ```sh
-python3 -B bin/ca-trust-audit.py endpoint --format json
-python3 -B bin/ca-trust-audit.py project /path/to/project --format json
-python3 -B bin/ca-trust-audit.py data --verify
-python3 -B bin/ca-trust-audit.py explain ENDPOINT-SPKI-TRUSTED
+git clone https://github.com/NobukazuHanada/emudhra-trust-audit.git
+cd emudhra-trust-audit
+python3 -B bin/emudhra-trust-audit.py endpoint --format json
+python3 -B bin/emudhra-trust-audit.py project /path/to/project --format json
+python3 -B bin/emudhra-trust-audit.py data --verify
+python3 -B bin/emudhra-trust-audit.py explain ENDPOINT-SPKI-TRUSTED
 ```
 
-実行コマンドが必要なOSストア・バージョン調査は既定で判定不能になります。信頼できるインストール済みツールを調べる場合のみ `endpoint --commands` を明示します。実行ファイルのPATH、Pythonの起動フック、Nodeの環境設定等が信頼できない端末では使わないでください。`--no-commands` は `--commands` より優先します。
+OS-store and version checks that require executable probes are reported as unable to assess by default. Use `endpoint --commands` only to inspect trusted installed tools. Do not use it if executable lookup through PATH, Python startup hooks or Node environment settings are untrusted. `--no-commands` takes precedence over `--commands`.
 
-`--bundle PATH`（端末）と `--scan-bundle FILE`（プロジェクト）で追加バンドルを指定できます。`--output FILE` は明示した場合だけレポートを書きます。通常はstdoutのみです。`--network-test HOST` は任意の追加機能で、接続先へのIPアドレス等の開示に同意した場合だけ使用してください。別接続で取得した証明書とハンドシェイク結果を結びつけて、安全・危険を断定しません。
+Use `--bundle PATH` for an additional endpoint bundle or `--scan-bundle FILE` for a project bundle. Reports go to stdout unless you explicitly request `--output FILE`. Optional `--network-test HOST` requires consent to disclose your IP address and other connection information to the destination. Certificates and handshake results obtained over separate connections are not combined into a claim of safety or exposure.
 
-## Claude Code / Codexへの導入
+To install the CLI, run `python -m pip install .` in a dedicated virtual environment, then check `emudhra-trust-audit --help`. No package has been published to PyPI. Building may require downloading build dependencies.
 
-リポジトリ直下の `skills/` は開発用です。次のコマンドで共通実装・IOCデータ・ライセンスを各スキルに同梱します。生成先が既存の場合は上書きせず停止します。
+## Install in Claude Code or Codex
+
+The root `skills/` directory is for development. Build portable skills to bundle the shared implementation, indicator data and licenses into each skill:
 
 ```sh
 python3 scripts/build_skills.py dist/skills
 ```
 
-生成された2つのフォルダを、必要なものだけ以下へ丸ごとコピーしてください。どちらも単独で動作し、もう一方のスキルや元のチェックアウトを必要としません。
+An existing destination is not overwritten. Copy either or both generated folders, in full, to the appropriate location. Each works independently of the other skill and the original checkout.
 
-| ホスト | 個人用 | プロジェクト用 |
+| Host | Personal | Project |
 | --- | --- | --- |
 | Claude Code | `~/.claude/skills/` | `.claude/skills/` |
 | Codex | `~/.agents/skills/` | `.agents/skills/` |
 
-Windowsの `~` はユーザープロファイルディレクトリです。エクスプローラーでコピーでき、シンボリックリンクや管理者権限は不要です。スキルを再検出させるためセッションを再起動してください。導入場所は [Claude Code公式資料](https://code.claude.com/docs/en/skills) と [Codex公式資料](https://learn.chatgpt.com/docs/build-skills) に基づきます。
+On Windows, `~` means your user profile directory. You can copy the folders in File Explorer; no symlinks or administrator privileges are required. Restart the session to ensure discovery. Locations follow the [Claude Code documentation](https://code.claude.com/docs/en/skills) and [Codex documentation](https://learn.chatgpt.com/docs/build-skills).
 
-Claude Codeでは `/endpoint-trust-audit` または `/project-trust-audit`、Codexでは `$endpoint-trust-audit` または `$project-trust-audit` を指定し、例えば「この端末をオフラインで検査」「カレントプロジェクトを変更せず検査」と依頼します。
+In Claude Code, invoke `/endpoint-trust-audit` or `/project-trust-audit`. In Codex, invoke `$endpoint-trust-audit` or `$project-trust-audit`. For example, ask “Audit this machine offline” or “Audit the current project without changing it.”
 
-スキルの `run.py` は任意のカレントディレクトリから実行可能です。例：
+A skill's helper can also run from any working directory:
 
 ```sh
 python3 -B /absolute/path/endpoint-trust-audit/run.py endpoint --format json
 python3 -B /absolute/path/project-trust-audit/run.py project . --format json
 ```
 
-## 結果と終了コード
+## Results and exit codes
 
-JSONは `schema_version`, `verdict`, `action`, `exit_code`, `findings`, `data_sources`, `notes`, `errors` を含みます。各findingに根拠・信頼度・出典・対策を収録します。`--format text` と `--format sarif` も利用できます。
+JSON contains `schema_version`, `verdict`, `action`, `exit_code`, `findings`, `data_sources`, `notes` and `errors`. Findings include evidence, confidence, sources and remediation. Text and SARIF output are available with `--format text` and `--format sarif`.
 
-| status | 意味 |
+| Status | Meaning |
 | --- | --- |
-| `known_indicator` | IOC・規則との一致を観測 |
-| `suspicious` | 文字列・パターン一致。実際の用途は要確認 |
-| `not_found` | 実施できた検査の範囲では見つからない |
-| `unable_to_assess` | 未対応、読み取り失敗、証拠不足などで判定不能 |
+| `known_indicator` | Observed a match against indicator data or rules |
+| `suspicious` | A text or pattern match whose actual use requires review |
+| `not_found` | Not found within checks that completed |
+| `unable_to_assess` | Unsupported input, read failure, insufficient evidence or another coverage gap |
 
-| 終了コード | 意味 |
+| Exit code | Meaning |
 | --- | --- |
-| 0 | 実施した検査からの追加対策なし。安全保証ではない |
-| 1 | 要確認・判定不能あり |
-| 2 | 要対策項目あり |
-| 3 | データ不整合、入力・実行エラー |
+| 0 | No further action identified by completed checks; not a safety guarantee |
+| 1 | Review required, including unresolved coverage gaps |
+| 2 | Action required |
+| 3 | Data integrity, input or execution error |
 
-`UNKNOWN` と `action_required` は両立します。鍵が保存されている事実は対策検討の根拠になりますが、稼働クライアントの受理を証明しません。`EXPOSED` / `BLOCKED` は実効受理・拒否を示す予約済みの判定語であり、現在のストア・バージョン調査では断定しません。`INSECURE` はTLS検証無効化に関する所見を含むため、statusとconfidenceを確認してください。
+`UNKNOWN` can coexist with `action_required`. A stored key warrants remediation review but does not prove that a running client accepts it. `EXPOSED` and `BLOCKED` are reserved for effective acceptance or rejection; current store and version checks do not establish either. `INSECURE` means findings include disabled TLS verification; inspect their status and confidence.
 
-## 検査範囲と限界
+## Coverage and limitations
 
-- OS別の既知パスと、オプトイン時のキーチェーン／Windowsストア・ランタイム・パッケージ照会を実装。macOS/Windowsの既定モードはファイル調査に限定されます。
-- npm / Yarn / pnpm、requirements / Poetry / uv / Pipenv / PDM、Cargo、Go、Composer、Bundler、Hex等の限定的パーサーを収録。Bunバイナリ、NuGet、Gradle等は棚卸しのみで、判定不能として報告します。全形式・全構文・推移依存を完全に扱うものではありません。
-- CA関連の既知パッケージを比較する専用監査です。一般的なCVE、改変パッケージ、悪性依存を網羅するSCAではありません。
-- 既定で20,000ファイル・各1 MiBまで。シンボリックリンク、特殊ファイル、大きなファイル、依存インストール先、ビルド成果物等は対象外。`.ca-trust-audit-ignore` の除外は報告に記録されます。
-- コンテナ内へ入る、イメージを取得する、パッケージを解決する、プロジェクトのスクリプトを実行する処理はありません。WSL・コンテナ内の結果はその環境だけに適用します。
-- ローカルで中間証明書が見つからなくても、サーバーが提示するチェーンを信頼する場合があります。関連ルートの存在・削除だけでは安全性を断定できません。
-- 失効情報、稼働プロセスのキャッシュ、ブラウザ独自ポリシー、Schannel/Authenticodeの実効検証、Java PKCS#12等は未検証または未対応です。
-- Linuxでローカル検証済み。macOS/Windows向けには模擬応答テストとCIマトリクスを用意していますが、実機確認は別途必要です。
+- Implements known OS paths and opt-in keychain, Windows-store, runtime and package queries. Default macOS and Windows checks are limited to files.
+- Includes partial parsers for npm, Yarn, pnpm, requirements, Poetry, uv, Pipenv, PDM, Cargo, Go, Composer, Bundler and Hex. Binary Bun locks, NuGet and Gradle are inventory-only and reported as unable to assess. Not every format, syntax or transitive dependency is resolved.
+- Compares known CA-related packages. It is not general software composition analysis covering all CVEs, modified packages or malicious dependencies.
+- Defaults to 20,000 files and 1 MiB per project file. Symlinks, special files, oversized files, installed dependency directories and build outputs are excluded. Exclusions from `.ca-trust-audit-ignore` are recorded in the report.
+- Does not enter containers, fetch images, resolve packages or execute project scripts. Results inside WSL or a container describe that environment only.
+- A server may supply a trusted chain even if its intermediate is absent locally. The presence or removal of related roots alone does not establish safety.
+- Revocation freshness, running-process caches, browser-specific policies, effective Schannel/Authenticode validation and Java PKCS#12 are unverified or unsupported.
+- Local validation runs on Linux. Mocked macOS/Windows responses and a CI matrix are provided; real-device validation is still needed.
 
-## 対処
+## Remediation
 
-OS・ブラウザ・CAパッケージ・ランタイムを公式経路から更新し、使用中のプロセスを再起動します。独自バンドル、仮想環境、CIイメージ・コンテナも更新して再構築・再配備し、再検査してください。TLS検証の無効化を回避策にしないでください。ルート証明書を一律に削除しないでください。
+Update the OS, browsers, CA packages and runtimes through official channels, then restart affected processes. Update custom bundles, virtual environments, CI images and containers; rebuild, redeploy and audit again. Never disable TLS verification as a workaround or indiscriminately delete root certificates.
 
-認証情報のローテーションは、実際の接続・認証・改変の証拠を調査して対象を決めます。一律に「全部交換」「交換不要」と判断しません。スキャナーは認証情報も信頼設定も変更しません。
+Scope credential rotation using evidence of actual connections, authentication and modification. Neither “rotate everything” nor “rotation is unnecessary” is a blanket conclusion. The scanner changes neither credentials nor trust settings.
 
-## プライバシーと脅威モデル
+## Privacy and threat model
 
-既定のスキャナーは外部送信しません。ソース行、トークン、プロキシURL、秘密鍵本文をレポートへ出さず、ユーザー名・ホームパスを伏せます。報告には相対ファイル名、公開パッケージ名、バージョンなどが含まれるため、共有前に確認してください。任意のファイル名へ埋め込まれた未知の秘密を完全に識別できる保証はありません。
+The scanner sends nothing externally by default. It omits source lines, tokens, proxy URLs and private-key contents from reports and redacts usernames and home paths. Reports still include relative filenames, public package names and versions; review them before sharing. Unknown secrets embedded in arbitrary filenames cannot be reliably recognized.
 
-**オンラインのClaude/Codexへ出力を渡す行為は、スキャナー自身の通信とは別です。** 完全に端末内に閉じる必要がある場合はCLIを直接実行し、出力を外部サービスに渡さないでください。AIに生の設定ファイルを追加で貼り付けさせないでください。信頼できないディレクトリは変更されないスナップショットで調査してください。
+**Sharing output with online Claude or Codex is separate from the scanner's own networking.** If everything must stay on your machine, run the CLI directly and do not share output with an external service. Do not ask an assistant to paste raw configuration files into the conversation. Audit a stable snapshot of untrusted directories.
 
-## データ・開発・ライセンス
+## Development and tests
 
-IOC・規則・修正版表は `data/` に分離し、出典URL・更新日・版・SHA-256を記録しています。ネットワーク更新はせず、変更はレビューするコミットとして管理します。ハッシュは整合性確認であり、署名や出典の正しさの保証ではありません。修正版表の多くは[コミュニティ追跡サイト](https://emudhra.we-have-a-problem.com/)に基づく2026-10-21のスナップショットです。保守時は各ベンダーの一次資料と再照合してください。
+Run the following in a development virtual environment. On Windows, replace `python3` with `py -3`.
 
-[CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.md](SECURITY.md)、[CHANGELOG.md](CHANGELOG.md)を参照してください。Apache-2.0で公開するためのソース一式です。[LICENSE](LICENSE)・[NOTICE](NOTICE)を同梱しています。eMudhra、Anthropic、OpenAI、GitHubとの提携・推奨関係はありません。第三者の修復スクリプトや侵害証明書は同梱せず、テスト証明書は合成フィクスチャです。
+```sh
+python3 -m pip install pytest ruff build
+python3 -m pytest
+python3 -m ruff check .
+python3 -m ruff format --check .
+python3 -B bin/emudhra-trust-audit.py data --verify
+python3 scripts/build_skills.py dist/skills
+python3 -m build
+```
 
-## 独立監査（2026-10-22）
+Choose a new, empty output directory if the build destination already exists. Tests cover LF, CRLF and CR data, tampering after newline conversion, and standalone skills outside the checkout. When editing skills, run the `quick_validate.py` helper supplied by `skill-creator` against both skill folders. That optional validation tool is not bundled here.
 
-再監査の変更・検証・残存リスクは [AUDIT.md](AUDIT.md) に記録しています。
-プロジェクトのリンクは読取り直前にも拒否し、端末の証明書・キーストアは上限付きの通常ファイル読取りに限定しています。端末のOS証明書リンクは正規のストアで使われるため追跡します。プロジェクトの既定上限は1 MiB、端末のバンドル読取りは通常16 MiB（証明書ファイルAPIは32 MiB）です。
+## Data, contribution and license
 
-`--commands` はプロセスの隔離機能ではありません。起動フックやツール自身の通信・書込みまで保証できません。オフライン保証が必要なら既定モードとローカルの固定スナップショットを使用してください。ネットワークマウントの読取りはOS側で通信し得ます。実行中に親ディレクトリが差し替わる競合を全OSで原子的に防ぐものではありません。
+Indicators, rules and fixed-version policies live in `data/`, with source URLs, dates, versions and SHA-256 digests. Updates are reviewed commits, never runtime downloads. JSON digests normalize CRLF and CR to LF while detecting other byte changes. `.gitattributes` also keeps checkouts at LF. Checksums provide consistency checks, not signatures or proof of source authenticity. Much of the version policy is a 2026-10-21 snapshot from the [community tracker](https://emudhra.we-have-a-problem.com/); maintainers should recheck primary vendor notices when updating it.
 
-`.nvmrc` / `.node-version` / `.go-version` / `.tool-versions` と単純な mise `[tools]` バージョン指定を比較します。未解析のmanifestも検査不足として報告します。コメント・条件分岐・テスト内のTLS設定や複雑なTOMLは静的パターン検査の限界があり、結果の用途確認が必要です。
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and [CHANGELOG.md](CHANGELOG.md). Licensed under Apache-2.0; [LICENSE](LICENSE) and [NOTICE](NOTICE) are included. This project is not affiliated with or endorsed by eMudhra, Anthropic, OpenAI or GitHub. It does not bundle third-party repair scripts or compromised certificates. Test certificates are synthetic fixtures.
+
+## Independent audit (2026-10-22)
+
+[AUDIT.md](AUDIT.md) records the independent review, corrections, validation and remaining risks. Project symlinks are rejected again immediately before reading. Endpoint certificates and keystores use bounded regular-file reads; OS certificate symlinks are followed because legitimate stores use them. Default limits are 1 MiB for project files and normally 16 MiB for endpoint bundles (32 MiB in the certificate-file API).
+
+`--commands` does not isolate processes or guarantee that startup hooks and installed tools will not communicate or write files. For offline operation, use the default mode with a stable local snapshot. Reading network mounts can trigger OS-level traffic. Concurrent replacement of parent directories is not prevented atomically on every OS.
+
+The scanner compares `.nvmrc`, `.node-version`, `.go-version`, `.tool-versions` and simple mise `[tools]` pins. Unparsed manifests are coverage gaps. Comments, conditional settings, test fixtures and complex TOML exceed static pattern matching's guarantees; review findings in context.
+
+## Renaming and compatibility
+
+The product, GitHub repository, distribution and CLI are named `emudhra-trust-audit`. The checkout entrypoint is now `bin/emudhra-trust-audit.py`; update existing caller scripts. For compatibility, the Python module `ca_trust_audit`, data override variable `CA_TRUST_AUDIT_DATA_DIR` and exclusion file `.ca-trust-audit-ignore` are retained. The two skill names are unchanged. Historical audit records and synthetic certificate subjects retain the original name.

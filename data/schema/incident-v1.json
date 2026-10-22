@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/REPLACE-ME/ca-trust-audit/data/schema/incident-v1.json",
-  "title": "ca-trust-audit incident indicator file, version 1",
+  "$id": "https://github.com/NobukazuHanada/emudhra-trust-audit/blob/main/data/schema/incident-v1.json",
+  "title": "emudhra-trust-audit incident indicator file, version 1",
   "type": "object",
   "required": [
     "schema_version",

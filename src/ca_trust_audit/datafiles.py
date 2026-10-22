@@ -70,10 +70,18 @@ def find_data_dir(explicit: Optional[str] = None) -> Path:
 
 
 def sha256_file(path: Path) -> str:
+    """Hash UTF-8 data with LF-normalized newlines; all other bytes matter."""
     digest = hashlib.sha256()
+    pending = b""
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(65536), b""):
-            digest.update(chunk)
+            chunk = pending + chunk
+            pending = b"\r" if chunk.endswith(b"\r") else b""
+            if pending:
+                chunk = chunk[:-1]
+            digest.update(chunk.replace(b"\r\n", b"\n").replace(b"\r", b"\n"))
+    if pending:
+        digest.update(b"\n")
     return digest.hexdigest()
 
 
@@ -85,13 +93,14 @@ def write_checksums(data_dir: Path) -> Path:
     """Maintainer helper: rewrite ``data/checksums.json``.
 
     This is the only function in the package that writes anything, and it is
-    reachable only through ``ca-trust-audit data --write-checksums``.
+    reachable only through ``emudhra-trust-audit data --write-checksums``.
     """
     payload = {
         "schema_version": 1,
         "algorithm": "sha256",
+        "normalization": "CRLF and CR line endings normalized to LF; other bytes unchanged",
         "note": (
-            "Regenerate with `ca-trust-audit data --write-checksums` after editing any "
+            "Regenerate with `emudhra-trust-audit data --write-checksums` after editing any "
             "file in data/. Reviewers compare these digests in the pull request."
         ),
         "files": compute_checksums(data_dir),

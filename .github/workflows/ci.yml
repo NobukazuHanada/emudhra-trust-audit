@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-22.04, macos-latest, windows-latest]
         python: ['3.9', '3.12', '3.14']
     runs-on: ${{ matrix.os }}
     steps:
@@ -19,7 +19,7 @@ jobs:
       - run: python -m pytest
       - run: python -m ruff check .
       - run: python -m ruff format --check .
-      - run: python -B bin/ca-trust-audit.py data --verify
+      - run: python -B bin/emudhra-trust-audit.py data --verify
       - run: python scripts/build_skills.py dist/skills
       - run: python -m build
       - name: Verify installed wheel outside checkout

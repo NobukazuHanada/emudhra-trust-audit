@@ -1,4 +1,4 @@
-"""Per-finding explanations served by ``ca-trust-audit explain <FINDING_ID>``.
+"""Per-finding explanations served by ``emudhra-trust-audit explain <FINDING_ID>``.
 
 Every finding the tool can emit has an entry here: what it means, how it was
 determined, what to do, and what it does not prove. Findings derived from the

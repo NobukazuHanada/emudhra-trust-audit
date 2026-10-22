@@ -1,9 +1,9 @@
 """Command line interface.
 
-    ca-trust-audit endpoint [--format text|json|sarif] [--network-test HOST]
-    ca-trust-audit project [PATH] [--format ...] [--scan-bundle FILE]
-    ca-trust-audit data [--verify] [--write-checksums]
-    ca-trust-audit explain FINDING_ID
+    emudhra-trust-audit endpoint [--format text|json|sarif] [--network-test HOST]
+    emudhra-trust-audit project [PATH] [--format ...] [--scan-bundle FILE]
+    emudhra-trust-audit data [--verify] [--write-checksums]
+    emudhra-trust-audit explain FINDING_ID
 
 Exit codes
     0  nothing to do: no indicator found, or already remediated
@@ -39,14 +39,16 @@ class AuditParser(argparse.ArgumentParser):
 
 def build_parser() -> argparse.ArgumentParser:
     parser = AuditParser(
-        prog="ca-trust-audit",
+        prog="emudhra-trust-audit",
         description=(
             "Read-only audit for compromised certificate-authority trust. Makes no change to the "
             "system by default. Network tests, executable probes and report writes are explicit opt-ins."
         ),
         epilog="Exit codes: 0 nothing to do, 1 review required, 2 action required, 3 audit error.",
     )
-    parser.add_argument("--version", action="version", version="ca-trust-audit %s" % __version__)
+    parser.add_argument(
+        "--version", action="version", version="emudhra-trust-audit %s" % __version__
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     def add_common(target: argparse.ArgumentParser) -> None:

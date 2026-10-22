@@ -98,7 +98,7 @@ def collect_override_sources(ctx: EndpointContext) -> Tuple[List[Finding], List[
                 evidence=evidence,
                 remediation=[
                     "Confirm each bundle is rebuilt from an updated upstream source, or unset the variable so the OS store is used.",
-                    "Scan a bundle directly with: ca-trust-audit endpoint --bundle <path>",
+                    "Scan a bundle directly with: emudhra-trust-audit endpoint --bundle <path>",
                 ],
             )
         )

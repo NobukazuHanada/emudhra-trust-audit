@@ -3,12 +3,13 @@
   "files": {
     "incidents/emudhra-2026.json": "b15c2818bc01c563de667ee8d95524dfe3edfe16be611e096879f66bc54af9bd",
     "policies/fixed-versions.json": "0812fc5afce8bf2af7df9b3ddf3582040d3621f34e5a7ab87af5331d7f5b622b",
-    "rules/insecure-tls.json": "e63c668de2e1955e281702715b5f8a66dc2a523228340286a5cb45471d738dc2",
+    "rules/insecure-tls.json": "4dcd2606b35e148d8284cedf3a6348a97b63e0b1e531629b71eaca636076365f",
     "rules/project-inventory.json": "a960d66cdd4cd3e4d0d218146112926048abc98cf0f6b73caba2b2e5a79c2a6b",
-    "schema/incident-v1.json": "22661b86fb06174d8eb7e4e32f28189d71dbe5f9bef8feeb69b712940a29ad16",
-    "schema/policy-v1.json": "de6e7ce4da71fe07e40012adac24dffebdfff7d6c60aa8078d88a192d61775a9",
-    "schema/ruleset-v1.json": "d1ec04dab0fb6a20bb121603a338fdb8a5a3a0c8f35e5211ab914c5a9eb4634b"
+    "schema/incident-v1.json": "4d2c57155f773a89ae53fc30d14a145f18c9f4e73adc765c6aeb8e0c2b66599f",
+    "schema/policy-v1.json": "286285447355b8cf4fdc91fdcbb87d781c23f202d8009ade5a5b16d0ee431266",
+    "schema/ruleset-v1.json": "adc301b42cab803da6a59a6c757d9ccc75b0fa132ed63957e9d145737e8e3bc1"
   },
-  "note": "Regenerate with `ca-trust-audit data --write-checksums` after editing any file in data/. Reviewers compare these digests in the pull request.",
+  "normalization": "CRLF and CR line endings normalized to LF; other bytes unchanged",
+  "note": "Regenerate with `emudhra-trust-audit data --write-checksums` after editing any file in data/. Reviewers compare these digests in the pull request.",
   "schema_version": 1
 }

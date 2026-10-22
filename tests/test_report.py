@@ -159,7 +159,7 @@ def test_sarif_output_is_well_formed() -> None:
     document = json.loads(report_module.render(report, "sarif"))
     assert document["version"] == "2.1.0"
     run = document["runs"][0]
-    assert run["tool"]["driver"]["name"] == "ca-trust-audit"
+    assert run["tool"]["driver"]["name"] == "emudhra-trust-audit"
     assert {rule["id"] for rule in run["tool"]["driver"]["rules"]} == {
         "PROJECT-TLS-VERIFY-NPM-STRICT-SSL",
         "PROJECT-INVENTORY",

@@ -436,7 +436,7 @@
       "tags": [],
       "description": "An override means the process does NOT use the OS trust store, so patching the OS does not necessarily fix this project. The referenced bundle must be checked for the compromised SPKIs separately. Only the variable name and the file it was set in are reported; the value is never printed.",
       "remediation": [
-        "Scan the referenced bundle: `ca-trust-audit project --scan-bundle <path>`.",
+        "Scan the referenced bundle: `emudhra-trust-audit project --scan-bundle <path>`.",
         "Rebuild or replace the bundle from an updated upstream source if it still contains a compromised SPKI."
       ],
       "references": []

@@ -94,7 +94,7 @@ actually observed, with the file or command it came from) and `remediation`.
 5. If `ENDPOINT-CREDENTIAL-REVIEW` is present, pass on its conditional guidance
    verbatim. Never tell the user to rotate every credential, and never tell them
    rotation is unnecessary. Scope follows evidence.
-6. `ca-trust-audit explain <FINDING_ID>` gives per-finding meaning, method,
+6. `emudhra-trust-audit explain <FINDING_ID>` gives per-finding meaning, method,
    remedy and limits. Use it instead of inventing an explanation.
 
 ## Hard rules
@@ -127,7 +127,7 @@ also invalidates the result. The offline store checks are the primary evidence.
 
 * A specific bundle: `--bundle /path/to/cert.pem`.
 * A project rather than the machine: use the `project-trust-audit` skill.
-* The underlying facts, with sources and dates: `ca-trust-audit data`.
+* The underlying facts, with sources and dates: `emudhra-trust-audit data`.
 
 ## Interpretation and privacy boundaries
 

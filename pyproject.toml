@@ -3,14 +3,14 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ca-trust-audit"
+name = "emudhra-trust-audit"
 version = "0.1.0"
 description = "Read-only auditor for compromised CA trust on developer endpoints and in project repositories"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
-authors = [{ name = "The ca-trust-audit contributors" }]
+authors = [{ name = "The emudhra-trust-audit contributors" }]
 keywords = ["security", "tls", "pki", "certificate-authority", "audit", "agent-skill"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -28,8 +28,12 @@ dependencies = []
 [project.optional-dependencies]
 dev = ["pytest>=7", "ruff>=0.5"]
 
+[project.urls]
+Repository = "https://github.com/NobukazuHanada/emudhra-trust-audit"
+Issues = "https://github.com/NobukazuHanada/emudhra-trust-audit/issues"
+
 [project.scripts]
-ca-trust-audit = "ca_trust_audit.cli:main"
+emudhra-trust-audit = "ca_trust_audit.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

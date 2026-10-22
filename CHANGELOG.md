@@ -1,6 +1,18 @@
 # Changelog
 
-## 0.1.0 — Unreleased
+## Unreleased
+
+- Rename the repository, distribution and CLI to `emudhra-trust-audit`.
+- Add equivalent English and Japanese READMEs with language links.
+- Normalize data newlines before SHA-256 verification so Windows checkouts and
+  copied CRLF data verify without suppressing actual content changes.
+- Pin Linux CI to Ubuntu 22.04 for Python 3.9 availability; retain the three-OS
+  Python 3.9/3.12/3.14 matrix and test CRLF standalone skills.
+- Preserve the Python module `ca_trust_audit`, `CA_TRUST_AUDIT_DATA_DIR` and
+  `.ca-trust-audit-ignore` compatibility interfaces. Synthetic certificate
+  subjects and historical audit records retain the original name.
+
+## 0.1.0
 
 - Continue the initial Raven-Code implementation with two independently
   distributable Claude Code/Codex skills and a shared Python scanner.

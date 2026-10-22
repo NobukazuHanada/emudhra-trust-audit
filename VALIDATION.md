@@ -76,3 +76,27 @@ The earlier handoff and audit Git-state descriptions above describe those
 reviews, before publication. Platform and detection limitations in AUDIT.md
 still apply; local tests do not establish successful hosted CI or real-device
 validation on macOS and Windows.
+
+## Rename and cross-platform correction — 2026-10-22
+
+The project is now `emudhra-trust-audit`; earlier names and Git states in this
+file are historical. The first published CI run exposed five failures on each
+Windows Python version and an Ubuntu setup failure. Converting the incident
+JSON from LF to CRLF reproduces the exact Windows digest mismatch
+(`b15c2818bc01c563` versus `dafab7accb2fdc94`). The CLI correctly refused
+unverified data with exit 3, which also caused the audit and portable-skill
+failures. Data hashing now normalizes CRLF/CR to LF without ignoring other byte
+changes. Git attributes also preserve LF in checkouts. Regression tests verify
+all three newline forms, tamper detection, chunk boundaries, and standalone
+skills with CRLF data.
+
+Linux CI is pinned to Ubuntu 22.04: the original Ubuntu 26.04 runner could not
+obtain Python 3.9. The matrix retains Python 3.9/3.12/3.14 on all three OSes.
+Python 3.9 is a legacy compatibility target, not a promise of upstream security
+support. See both READMEs for the support policy.
+
+Local Python 3.9 and 3.12 each pass 207 tests. Ruff lint/format, both skill
+validators and data verification pass. The renamed sdist and wheel build.
+The English and Japanese READMEs have matching command examples and language
+links. Hosted CI results are available in the repository's Actions tab; these
+local results alone do not establish a hosted run's success.

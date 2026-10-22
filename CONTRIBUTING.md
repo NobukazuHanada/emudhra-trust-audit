@@ -13,7 +13,7 @@ python3 -m venv .venv
 ```
 
 On Windows use `py -3 -m venv .venv` and `.venv\Scripts\python`.
-Run `python -B bin/ca-trust-audit.py data --verify` and build the standalone
+Run `python -B bin/emudhra-trust-audit.py data --verify` and build the standalone
 skills with `python scripts/build_skills.py <new-empty-directory>`.
 CI runs tests, lint, formatting, data verification, skill builds and wheel smoke
 checks on Linux, macOS and Windows with Python 3.9, 3.12 and 3.14.
@@ -23,7 +23,7 @@ Keep indicators and matching rules in `data/`, with sources, date and version.
 Verify advisories against primary vendor/CA-program sources. Do not silently
 extend a distribution's fixed version to a different distribution or branch.
 After a reviewed data edit, run
-`python -B bin/ca-trust-audit.py data --write-checksums` and review the resulting
+`python -B bin/emudhra-trust-audit.py data --write-checksums` and review the resulting
 digests. Never add runtime downloads of indicator data or remote fix scripts.
 Checksums provide integrity, not authenticity; changes still need review.
 

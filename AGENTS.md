@@ -17,13 +17,13 @@ section.
 ## Commands
 
 ```bash
-python3 bin/ca-trust-audit.py endpoint --format json     # this machine
-python3 bin/ca-trust-audit.py project . --format json    # this repository
-python3 bin/ca-trust-audit.py explain ENDPOINT-SPKI-TRUSTED
-python3 bin/ca-trust-audit.py data                       # indicator provenance
+python3 bin/emudhra-trust-audit.py endpoint --format json     # this machine
+python3 bin/emudhra-trust-audit.py project . --format json    # this repository
+python3 bin/emudhra-trust-audit.py explain ENDPOINT-SPKI-TRUSTED
+python3 bin/emudhra-trust-audit.py data                       # indicator provenance
 ```
 
-On Windows use `py -3 bin\ca-trust-audit.py ...`.
+On Windows use `py -3 bin\emudhra-trust-audit.py ...`.
 
 Exit codes: `0` nothing to do, `1` review required, `2` action required, `3`
 audit error. Treat a non-zero exit as information, not as a crash.
@@ -49,7 +49,7 @@ audit error. Treat a non-zero exit as information, not as a crash.
 ```bash
 python3 -m pytest           # tests
 python3 -m ruff check .     # lint
-python3 bin/ca-trust-audit.py data --write-checksums   # after editing data/
+python3 bin/emudhra-trust-audit.py data --write-checksums   # after editing data/
 ```
 
 New checks belong in `data/` when they are indicators or rules, and in

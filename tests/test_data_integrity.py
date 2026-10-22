@@ -127,3 +127,32 @@ def test_schema_validator_rejects_a_broken_record() -> None:
 @pytest.mark.parametrize("name", list(datafiles.CHECKSUMMED_FILES))
 def test_checksummed_files_exist(name: str) -> None:
     assert (REPO_ROOT / "data" / name).is_file()
+
+
+@pytest.mark.parametrize("newline", [b"\n", b"\r\n", b"\r"])
+def test_data_newlines_and_tampering(tmp_path, newline):
+    import shutil
+
+    from ca_trust_audit.cli import main
+
+    directory = tmp_path / "data"
+    shutil.copytree(REPO_ROOT / "data", directory)
+    for path in directory.rglob("*.json"):
+        path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", newline))
+    assert datafiles.load(str(directory)).checksum_status == "verified"
+    project = tmp_path / "project"
+    project.mkdir()
+    assert main(["project", str(project), "--data-dir", str(directory)]) in (0, 1, 2)
+    assert main(["endpoint", "--fs-root", str(project), "--data-dir", str(directory)]) in (0, 1, 2)
+    target = directory / datafiles.INCIDENT_FILE
+    target.write_bytes(target.read_bytes().replace(b'"schema_version": 1', b'"schema_version": 2'))
+    assert datafiles.load(str(directory)).checksum_status == "mismatch"
+    assert main(["project", str(project), "--data-dir", str(directory)]) == 3
+
+
+def test_checksum_newline_across_chunk_boundary(tmp_path):
+    import hashlib
+
+    path = tmp_path / "data.json"
+    path.write_bytes(b" " * 65535 + b"\r\n{}\r")
+    assert datafiles.sha256_file(path) == hashlib.sha256(b" " * 65535 + b"\n{}\n").hexdigest()
