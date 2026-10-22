@@ -1,0 +1,7 @@
+recursive-include data *.json
+recursive-include skills *.md *.py
+recursive-include scripts *.py
+include LICENSE NOTICE README.md SECURITY.md CONTRIBUTING.md CHANGELOG.md
+recursive-include bin *.py
+recursive-include tests *.py *.pem *.md
+include AGENTS.md AUDIT.md VALIDATION.md

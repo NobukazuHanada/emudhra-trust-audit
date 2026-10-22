@@ -1,0 +1,46 @@
+ca-trust-audit
+Copyright 2026 The ca-trust-audit contributors
+
+This product includes software developed by the ca-trust-audit contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+-------------------------------------------------------------------------------
+Third-party material and attribution
+-------------------------------------------------------------------------------
+
+This project does not bundle third-party source code, certificate files,
+archives or scripts. The certificate fixtures under tests/fixtures are synthetic
+project-owned test data, covered by this project's Apache-2.0 license.
+
+The indicator and remediation data under `data/` records *facts* (public key
+fingerprints, certificate authority names, fixed package version strings) that
+were transcribed by hand from the public advisories listed below. Each data
+record carries its own `sources`, `as_of` and `version` fields. The advisories
+themselves are not redistributed here; only citations to them.
+
+  * Mozilla Bugzilla bug 2083449 - "eMudhra: Weak keys in intermediate CA
+    certificates"
+    https://bugzilla.mozilla.org/show_bug.cgi?id=2083449
+  * Google - "Protecting Chrome and Android users from compromised eMudhra
+    intermediate CA certificates"
+    https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates
+  * eMudhra - "Certificate security incident"
+    https://emudhra.com/en/post/certificate-security-incident
+  * Cloudflare - "eMudhra certificate compromise"
+    https://blog.cloudflare.com/emudhra-certificate-compromise
+  * Community advisory and remediation tracker
+    https://emudhra.we-have-a-problem.com/
+
+Trademarks: "eMudhra" and "emSign" are marks of eMudhra Limited. "Claude" and
+"Claude Code" are marks of Anthropic PBC. "Codex" is a mark of OpenAI.
+"GitHub" is a mark of GitHub, Inc. All other marks belong to their respective
+owners. This project is an independent community effort and is NOT affiliated
+with, endorsed by, or sponsored by any of them. Marks are used only for
+nominative identification of the systems that are inspected or of the affected
+certificate authority. The Apache License 2.0 grants no trademark rights
+(Section 6).

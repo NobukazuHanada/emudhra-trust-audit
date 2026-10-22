@@ -1,0 +1,345 @@
+{
+  "schema_version": 1,
+  "policy_id": "emudhra-2026-fixed-versions",
+  "incident_id": "emudhra-weak-intermediates-2026",
+  "data_version": "2026.10.22",
+  "as_of": "2026-10-22",
+  "confidence": "medium",
+  "confidence_rationale": "Version tables are transcribed from a community remediation tracker and change frequently. A version comparison is corroborating evidence only; the authoritative check is whether a compromised SPKI is still accepted. Never downgrade an SPKI match to 'fine' because a version looks new, and never report 'exposed' on a version string alone.",
+  "unknown_branch_behaviour": "unable_to_assess",
+  "os_ca_bundles": [
+    {
+      "id": "debian-12-ca-certificates",
+      "os_ids": [
+        "debian"
+      ],
+      "os_version_prefix": "12",
+      "package_manager": "dpkg",
+      "package": "ca-certificates",
+      "fixed_version": "20250419~deb12u2",
+      "scheme": "dpkg",
+      "as_of": "2026-10-21",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "debian-13-ca-certificates",
+      "os_ids": [
+        "debian"
+      ],
+      "os_version_prefix": "13",
+      "package_manager": "dpkg",
+      "package": "ca-certificates",
+      "fixed_version": "20250419+deb13u1",
+      "scheme": "dpkg",
+      "as_of": "2026-10-21",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "ubuntu-ca-certificates",
+      "os_ids": [
+        "ubuntu"
+      ],
+      "os_version_prefix": "",
+      "package_manager": "dpkg",
+      "package": "ca-certificates",
+      "fixed_version": "20260816",
+      "scheme": "dpkg",
+      "as_of": "2026-10-21",
+      "note": "The tracker lists the fixed versions as 20260816ubuntu0.* per release series. Any dpkg version that sorts at or above the 20260816 snapshot satisfies this check; confirm the exact per-series build with your release's security notice.",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "fedora-ca-certificates",
+      "os_ids": [
+        "fedora"
+      ],
+      "os_version_prefix": "",
+      "package_manager": "rpm",
+      "package": "ca-certificates",
+      "fixed_version": "2026.2.92_v9.0.319",
+      "scheme": "dpkg",
+      "as_of": "2026-10-21",
+      "note": "Transcribed from the Fedora row of the tracker. Enterprise rebuilds (RHEL, Rocky, AlmaLinux) ship their own version strings; treat a mismatch there as 'unable to assess' and confirm with the distributor's erratum.",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "arch-ca-certificates-mozilla",
+      "os_ids": [
+        "arch",
+        "archarm",
+        "manjaro"
+      ],
+      "os_version_prefix": "",
+      "package_manager": "pacman",
+      "package": "ca-certificates-mozilla",
+      "fixed_version": "3.131.1-1",
+      "scheme": "dpkg",
+      "as_of": "2026-10-21",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "alpine-ca-certificates",
+      "os_ids": [
+        "alpine"
+      ],
+      "os_version_prefix": "",
+      "package_manager": "apk",
+      "package": "ca-certificates",
+      "fixed_version": "20261020-r0",
+      "scheme": "dpkg",
+      "as_of": "2026-10-21",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "homebrew-ca-certificates",
+      "os_ids": [
+        "darwin"
+      ],
+      "os_version_prefix": "",
+      "package_manager": "brew",
+      "package": "ca-certificates",
+      "fixed_version": null,
+      "scheme": "generic",
+      "as_of": "2026-10-21",
+      "note": "Homebrew's ca-certificates formula tracks the Mozilla bundle revision. No fixed revision was recorded by the tracker at the time of transcription, so an installed version cannot be judged here; verify by SPKI scan of the installed cert.pem instead.",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "id": "python-certifi",
+      "name": "certifi",
+      "ecosystem": "pypi",
+      "kind": "ca-bundle-library",
+      "scheme": "generic",
+      "branches": [
+        {
+          "match": "*",
+          "fixed": "2026.10.19"
+        }
+      ],
+      "as_of": "2026-10-21",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "pip",
+      "name": "pip",
+      "ecosystem": "pypi",
+      "kind": "tool",
+      "scheme": "generic",
+      "branches": [
+        {
+          "match": "*",
+          "fixed": "26.2.2"
+        }
+      ],
+      "as_of": "2026-10-21",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "uv",
+      "name": "uv",
+      "ecosystem": "pypi",
+      "kind": "tool",
+      "scheme": "generic",
+      "branches": [
+        {
+          "match": "*",
+          "fixed": "0.13.4"
+        }
+      ],
+      "as_of": "2026-10-21",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "go",
+      "name": "go",
+      "ecosystem": "golang",
+      "kind": "runtime",
+      "scheme": "generic",
+      "branches": [
+        {
+          "match": "1.27",
+          "fixed": "1.27.3"
+        },
+        {
+          "match": "1.26",
+          "fixed": "1.26.10"
+        }
+      ],
+      "as_of": "2026-10-21",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "nodejs",
+      "name": "node",
+      "ecosystem": "npm",
+      "kind": "runtime",
+      "scheme": "generic",
+      "branches": [
+        {
+          "match": "22",
+          "fixed": "22.23.4"
+        },
+        {
+          "match": "24",
+          "fixed": "24.22.1"
+        },
+        {
+          "match": "26",
+          "fixed": "26.12.1"
+        }
+      ],
+      "as_of": "2026-10-21",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "rustls-webpki",
+      "name": "rustls-webpki",
+      "ecosystem": "crates",
+      "kind": "ca-bundle-library",
+      "scheme": "generic",
+      "branches": [
+        {
+          "match": "0.103",
+          "fixed": "0.103.16"
+        }
+      ],
+      "as_of": "2026-10-21",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "webpki-roots",
+      "name": "webpki-roots",
+      "ecosystem": "crates",
+      "kind": "ca-bundle-library",
+      "scheme": "generic",
+      "branches": [
+        {
+          "match": "1.0",
+          "fixed": "1.0.10"
+        }
+      ],
+      "as_of": "2026-10-21",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    },
+    {
+      "id": "claude-code",
+      "name": "@anthropic-ai/claude-code",
+      "ecosystem": "npm",
+      "kind": "tool",
+      "scheme": "generic",
+      "branches": [
+        {
+          "match": "*",
+          "fixed": "2.1.303"
+        }
+      ],
+      "as_of": "2026-10-21",
+      "sources": [
+        "https://emudhra.we-have-a-problem.com/"
+      ]
+    }
+  ],
+  "watchlist": [
+    {
+      "id": "mozilla-ca-perl",
+      "name": "Mozilla::CA",
+      "ecosystem": "cpan",
+      "kind": "ca-bundle-library",
+      "reason": "Ships its own copy of the Mozilla root bundle, independent of the OS store. No fixed version transcribed."
+    },
+    {
+      "id": "composer-ca-bundle",
+      "name": "composer/ca-bundle",
+      "ecosystem": "packagist",
+      "kind": "ca-bundle-library",
+      "reason": "Falls back to a bundled cacert.pem when no system bundle is found. No fixed version transcribed."
+    },
+    {
+      "id": "castore",
+      "name": "castore",
+      "ecosystem": "hex",
+      "kind": "ca-bundle-library",
+      "reason": "Elixir CA store; independent of the OS store. No fixed version transcribed."
+    },
+    {
+      "id": "electron",
+      "name": "electron",
+      "ecosystem": "npm",
+      "kind": "runtime",
+      "reason": "Embeds its own Chromium/BoringSSL root store and CRLSet handling. No fixed version transcribed."
+    },
+    {
+      "id": "deno",
+      "name": "deno",
+      "ecosystem": "generic",
+      "kind": "runtime",
+      "reason": "Embeds webpki-roots. No fixed version transcribed."
+    },
+    {
+      "id": "codex-cli",
+      "name": "@openai/codex",
+      "ecosystem": "npm",
+      "kind": "tool",
+      "reason": "Agent CLI whose TLS stack depends on its build; no fixed version transcribed."
+    },
+    {
+      "id": "java-cacerts",
+      "name": "cacerts",
+      "ecosystem": "generic",
+      "kind": "ca-bundle-library",
+      "reason": "JDK keystore, independent of the OS store. Fixed JDK builds vary per vendor; no fixed version transcribed."
+    },
+    {
+      "id": "openssl",
+      "name": "openssl",
+      "ecosystem": "generic",
+      "kind": "runtime",
+      "reason": "Does not ship roots itself, but determines which bundle path is resolved. Record the resolved path, not a verdict."
+    },
+    {
+      "id": "curl",
+      "name": "curl",
+      "ecosystem": "generic",
+      "kind": "tool",
+      "reason": "May be built against Schannel, Secure Transport, OpenSSL or a bundled cainfo path. Record the resolved bundle."
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://emudhra.we-have-a-problem.com/",
+      "publisher": "community tracker",
+      "retrieved": "2026-10-21",
+      "used_for": "all fixed version strings in this file"
+    }
+  ]
+}

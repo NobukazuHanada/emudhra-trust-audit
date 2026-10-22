@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "ruleset_id": "project-inventory",
+  "data_version": "2026.10.22",
+  "as_of": "2026-10-22",
+  "description": "File-name catalogue used to inventory a repository: dependency manifests, lock files, container and CI definitions, vendored CA bundles and pinned tool versions. Names only - no network access and no dependency resolution.",
+  "manifests": [
+    { "id": "npm", "ecosystem": "npm", "files": ["package.json"] },
+    { "id": "pip-requirements", "ecosystem": "pypi", "files": ["requirements.txt", "requirements-dev.txt", "requirements/*.txt", "constraints.txt"] },
+    { "id": "pyproject", "ecosystem": "pypi", "files": ["pyproject.toml", "setup.cfg", "setup.py", "Pipfile"] },
+    { "id": "cargo", "ecosystem": "crates", "files": ["Cargo.toml"] },
+    { "id": "gomod", "ecosystem": "golang", "files": ["go.mod"] },
+    { "id": "maven", "ecosystem": "maven", "files": ["pom.xml"] },
+    { "id": "gradle", "ecosystem": "maven", "files": ["build.gradle", "build.gradle.kts", "gradle/libs.versions.toml"] },
+    { "id": "nuget", "ecosystem": "nuget", "files": ["*.csproj", "*.fsproj", "*.vbproj", "Directory.Packages.props", "packages.config"] },
+    { "id": "composer", "ecosystem": "packagist", "files": ["composer.json"] },
+    { "id": "bundler", "ecosystem": "rubygems", "files": ["Gemfile", "*.gemspec"] },
+    { "id": "hex", "ecosystem": "hex", "files": ["mix.exs"] },
+    { "id": "cpan", "ecosystem": "cpan", "files": ["cpanfile", "Makefile.PL"] }
+  ],
+  "lockfiles": [
+    { "id": "npm-lock", "ecosystem": "npm", "files": ["package-lock.json"], "parser": "npm-lock" },
+    { "id": "yarn-lock", "ecosystem": "npm", "files": ["yarn.lock"], "parser": "yarn-lock" },
+    { "id": "pnpm-lock", "ecosystem": "npm", "files": ["pnpm-lock.yaml"], "parser": "pnpm-lock" },
+    { "id": "bun-lock", "ecosystem": "npm", "files": ["bun.lockb", "bun.lock"], "parser": "opaque" },
+    { "id": "pip-lock", "ecosystem": "pypi", "files": ["requirements.txt", "requirements-dev.txt", "requirements/*.txt", "constraints.txt", "requirements.lock"], "parser": "requirements" },
+    { "id": "poetry-lock", "ecosystem": "pypi", "files": ["poetry.lock"], "parser": "toml-lock" },
+    { "id": "uv-lock", "ecosystem": "pypi", "files": ["uv.lock"], "parser": "toml-lock" },
+    { "id": "pipenv-lock", "ecosystem": "pypi", "files": ["Pipfile.lock"], "parser": "pipfile-lock" },
+    { "id": "pdm-lock", "ecosystem": "pypi", "files": ["pdm.lock"], "parser": "toml-lock" },
+    { "id": "cargo-lock", "ecosystem": "crates", "files": ["Cargo.lock"], "parser": "toml-lock" },
+    { "id": "gosum", "ecosystem": "golang", "files": ["go.sum"], "parser": "gosum" },
+    { "id": "gradle-lock", "ecosystem": "maven", "files": ["gradle.lockfile", "gradle/verification-metadata.xml"], "parser": "opaque" },
+    { "id": "nuget-lock", "ecosystem": "nuget", "files": ["packages.lock.json"], "parser": "opaque" },
+    { "id": "composer-lock", "ecosystem": "packagist", "files": ["composer.lock"], "parser": "composer-lock" },
+    { "id": "bundler-lock", "ecosystem": "rubygems", "files": ["Gemfile.lock"], "parser": "gemfile-lock" },
+    { "id": "hex-lock", "ecosystem": "hex", "files": ["mix.lock"], "parser": "mix-lock" }
+  ],
+  "container_files": [
+    "Dockerfile",
+    "Dockerfile.*",
+    "*.Dockerfile",
+    "Containerfile",
+    "docker-compose.yml",
+    "docker-compose.yaml",
+    "compose.yml",
+    "compose.yaml",
+    "devcontainer.json",
+    ".devcontainer/devcontainer.json"
+  ],
+  "ci_files": [
+    ".github/workflows/*.yml",
+    ".github/workflows/*.yaml",
+    ".gitlab-ci.yml",
+    "azure-pipelines.yml",
+    ".circleci/config.yml",
+    "Jenkinsfile",
+    ".drone.yml",
+    "bitbucket-pipelines.yml",
+    ".woodpecker.yml"
+  ],
+  "tool_version_files": [
+    ".tool-versions",
+    ".nvmrc",
+    ".node-version",
+    ".python-version",
+    "rust-toolchain",
+    "rust-toolchain.toml",
+    ".ruby-version",
+    ".go-version",
+    "mise.toml",
+    ".mise.toml"
+  ],
+  "config_files": [
+    ".npmrc",
+    ".yarnrc",
+    ".yarnrc.yml",
+    "pip.conf",
+    "pip.ini",
+    ".curlrc",
+    ".gitconfig",
+    ".gitmodules",
+    "composer.json",
+    "Cargo.toml",
+    ".cargo/config.toml",
+    ".gradle/gradle.properties",
+    "gradle.properties",
+    "NuGet.config",
+    "nuget.config"
+  ],
+  "ca_bundle_suffixes": [".pem", ".crt", ".cer", ".cert", ".ca-bundle", ".p7b"],
+  "ca_bundle_name_hints": ["cacert", "ca-cert", "ca_cert", "cabundle", "ca-bundle", "cacerts", "roots", "truststore", "trust-store"],
+  "container_ca_update_patterns": [
+    "update-ca-certificates",
+    "update-ca-trust",
+    "apk\\s+(add|upgrade)[^\\n]*ca-certificates",
+    "apt-get[^\\n]*install[^\\n]*ca-certificates",
+    "apt[^\\n]*install[^\\n]*ca-certificates",
+    "(dnf|yum|microdnf)[^\\n]*(install|update)[^\\n]*ca-certificates",
+    "zypper[^\\n]*(install|update)[^\\n]*ca-certificates",
+    "pacman[^\\n]*ca-certificates"
+  ],
+  "sources": [
+    {
+      "url": "https://emudhra.we-have-a-problem.com/",
+      "publisher": "community tracker",
+      "retrieved": "2026-10-21",
+      "used_for": "the list of ecosystems and TLS-relevant tooling worth inventorying"
+    }
+  ]
+}

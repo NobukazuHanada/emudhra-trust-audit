@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/REPLACE-ME/ca-trust-audit/data/schema/incident-v1.json",
+  "title": "ca-trust-audit incident indicator file, version 1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "incident_id",
+    "title",
+    "data_version",
+    "updated",
+    "summary",
+    "usage",
+    "primary_match_key",
+    "compromised_intermediates",
+    "related_roots",
+    "sources"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "enum": [1] },
+    "incident_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "title": { "type": "string" },
+    "data_version": { "type": "string", "pattern": "^[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}$" },
+    "updated": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "as_of": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "classification": { "type": "string" },
+    "is_malware_incident": { "type": "boolean" },
+    "summary": { "type": "string" },
+    "usage": { "type": "array", "items": { "type": "string", "enum": ["tls", "code-signing"] } },
+    "primary_match_key": { "type": "string", "enum": ["spki_sha256", "certificate_sha256"] },
+    "primary_match_key_rationale": { "type": "string" },
+    "compromised_intermediates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["common_name", "usage", "spki_sha256"],
+        "properties": {
+          "common_name": { "type": "string" },
+          "usage": { "type": "string", "enum": ["tls", "code-signing"] },
+          "spki_sha256": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" },
+          "signing_paths": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "certificate_sha256": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" }
+    },
+    "certificate_sha256_status": { "type": "string", "enum": ["complete", "partial", "not-transcribed"] },
+    "certificate_sha256_note": { "type": "string" },
+    "certificate_count_expected": { "type": "integer" },
+    "certificate_count_derivation": { "type": "string" },
+    "related_roots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["common_name", "role"],
+        "properties": {
+          "common_name": { "type": "string" },
+          "role": { "type": "string" },
+          "note": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" }
+        }
+      }
+    },
+    "root_presence_is_not_an_indicator": { "type": "boolean" },
+    "root_presence_rationale": { "type": "string" },
+    "network_test_hosts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["host", "operator", "purpose", "opt_in_only"],
+        "properties": {
+          "host": { "type": "string" },
+          "operator": { "type": "string" },
+          "purpose": { "type": "string" },
+          "opt_in_only": { "type": "boolean" },
+          "privacy_note": { "type": "string" }
+        }
+      }
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["date", "event"],
+        "properties": {
+          "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+          "event": { "type": "string" },
+          "source": { "type": "string", "pattern": "^https://" }
+        }
+      }
+    },
+    "credential_guidance": {
+      "type": "object",
+      "required": ["principle", "conditions", "sources"],
+      "properties": {
+        "principle": { "type": "string" },
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["when", "state", "do"],
+            "properties": {
+              "when": { "type": "string" },
+              "state": {
+                "type": "string",
+                "enum": ["CREDENTIAL_REVIEW_REQUIRED", "CREDENTIAL_ACTION_REQUIRED", "ESCALATE"]
+              },
+              "do": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["url", "publisher", "retrieved", "used_for"],
+            "properties": {
+              "url": { "type": "string", "pattern": "^https://" },
+              "publisher": { "type": "string" },
+              "retrieved": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+              "used_for": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["url", "publisher", "retrieved", "used_for"],
+        "properties": {
+          "url": { "type": "string", "pattern": "^https://" },
+          "publisher": { "type": "string" },
+          "retrieved": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+          "used_for": { "type": "string" }
+        }
+      }
+    },
+    "limitations": { "type": "array", "items": { "type": "string" } }
+  }
+}

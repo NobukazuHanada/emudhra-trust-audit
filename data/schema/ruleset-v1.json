@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/REPLACE-ME/ca-trust-audit/data/schema/ruleset-v1.json",
+  "title": "ca-trust-audit textual ruleset file, version 1",
+  "type": "object",
+  "required": ["schema_version", "ruleset_id", "data_version", "as_of", "description"],
+  "properties": {
+    "schema_version": { "type": "integer", "enum": [1] },
+    "ruleset_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "data_version": { "type": "string", "pattern": "^[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}$" },
+    "as_of": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "description": { "type": "string" },
+    "scan": {
+      "type": "object",
+      "required": ["exclude_dirs", "max_file_bytes", "max_files"],
+      "properties": {
+        "exclude_dirs": { "type": "array", "items": { "type": "string" } },
+        "max_file_bytes": { "type": "integer" },
+        "max_files": { "type": "integer" },
+        "text_suffixes": { "type": "array", "items": { "type": "string" } },
+        "text_filenames": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "pattern",
+          "status",
+          "severity",
+          "confidence",
+          "description",
+          "remediation"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Z0-9-]+$" },
+          "title": { "type": "string" },
+          "pattern": { "type": "string" },
+          "flags": { "type": "array", "items": { "type": "string", "enum": ["i", "m", "s"] } },
+          "status": {
+            "type": "string",
+            "enum": ["known_indicator", "suspicious", "not_found", "unable_to_assess"]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low", "info", "pass"]
+          },
+          "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["tls-verification-disabled"] }
+          },
+          "path_hints": { "type": "array", "items": { "type": "string" } },
+          "description": { "type": "string" },
+          "remediation": { "type": "array", "items": { "type": "string" } },
+          "references": { "type": "array", "items": { "type": "string", "pattern": "^https://" } }
+        }
+      }
+    },
+    "manifests": { "type": "array" },
+    "lockfiles": { "type": "array" },
+    "container_files": { "type": "array", "items": { "type": "string" } },
+    "ci_files": { "type": "array", "items": { "type": "string" } },
+    "tool_version_files": { "type": "array", "items": { "type": "string" } },
+    "config_files": { "type": "array", "items": { "type": "string" } },
+    "ca_bundle_suffixes": { "type": "array", "items": { "type": "string" } },
+    "ca_bundle_name_hints": { "type": "array", "items": { "type": "string" } },
+    "container_ca_update_patterns": { "type": "array", "items": { "type": "string" } },
+    "sources": { "type": "array" }
+  }
+}
