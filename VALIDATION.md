@@ -37,3 +37,11 @@ locked dependency license collection. A generated archive was extracted outside
 the checkout: the executable verified its embedded data with an empty PATH, and
 the bundled project wrapper returned the expected review result. No Python files
 were present in the archive. Real hosted results are recorded in Actions.
+
+The first hosted run caught Windows verbatim-path prefix handling: metadata
+must be queried after the root separator, not for the incomplete drive prefix.
+The Windows filesystem test now explicitly reads a canonicalized regular file.
+It also caught an x86_64 musl release startup crash with Ubuntu 22.04's musl-gcc
+wrapper; that target now uses Rust's self-contained CRT and default linker.
+Local GNU and musl targets both pass all 46 tests; the musl release binary also
+verifies its embedded data successfully. Hosted reruns verify the other OSes.

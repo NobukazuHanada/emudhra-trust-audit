@@ -33,7 +33,7 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - name: Install musl linker
-        if: runner.os == 'Linux'
+        if: matrix.target == 'aarch64-unknown-linux-musl'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
       - run: cargo test --locked --all-targets
       - name: Build standalone executable
@@ -41,7 +41,8 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
-          CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
+          # x86_64 uses Rust's self-contained musl CRT with the default linker.
+          # Ubuntu 22.04 musl-gcc overrides static-PIE startup and segfaults.
         run: cargo build --locked --release --target "$TARGET"
       - name: Smoke test and package
         shell: bash

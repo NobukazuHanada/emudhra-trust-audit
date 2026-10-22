@@ -39,6 +39,12 @@ pub fn no_links(path: &Path) -> Result<(), String> {
     let mut p = std::path::PathBuf::new();
     for c in path.components() {
         p.push(c);
+        // A Windows drive/UNC prefix alone is not a filesystem root (in
+        // particular canonicalize returns verbatim paths such as \\?\C:\).
+        // Check it after RootDir has been appended, then every descendant.
+        if matches!(c, Component::Prefix(_)) {
+            continue;
+        }
         let m = fs::symlink_metadata(&p).map_err(|_| "path unavailable")?;
         if is_link(&m) {
             return Err("linked or reparse path excluded".into());

@@ -745,6 +745,13 @@ fn windows_reparse_and_file_id() {
         safe::location(Path::new("a\\b"))
     );
     let t = Temp::new();
+    let regular = t.write("regular.txt", "regular");
+    // Temp uses canonicalize: Windows returns a verbatim drive prefix.
+    assert_eq!(safe::read(&regular, 100, false).unwrap(), b"regular");
+    assert_eq!(
+        safe::project_read(&t.0, Path::new("regular.txt"), 100).unwrap(),
+        b"regular"
+    );
     let outside = Temp::new();
     outside.write("secret.rs", "SECRET");
     if symlink_dir(&outside.0, t.0.join("linked")).is_ok() {
