@@ -1,25 +1,35 @@
 # Security policy
 
-The current 0.1.x development line receives fixes. This is an evidence collector,
-not a certification of endpoint safety or an incident-response replacement.
+The Rust 0.2.x line receives fixes. Use GitHub's Security → Report a vulnerability
+if private reporting is available; otherwise request a private contact in a
+minimal issue without sensitive details. Never publish credentials, personal
+paths, trust-store exports or raw reports. Include the tool/data versions, OS,
+finding ID and a synthetic reproduction.
 
-Do not post tokens, private keys, personal paths or raw reports in public issues.
-Use GitHub's **Security → Report a
-vulnerability** if private reporting is enabled. If it is unavailable, open a
-minimal issue asking for a private channel, with no exploit or sensitive data.
-A private contact has not yet been established for this repository.
+Default audits are read-only and offline. No project script or runtime is invoked.
+Explicit --commands probes trust installed tools, PATH and startup configuration;
+those tools can write or communicate. The scanner does not sandbox them. Each
+probe has a 10-second deadline and a 16 MiB stdout limit. Child process trees are
+not fully isolated. --network-test is an additional explicit opt-in using an
+installed OpenSSL client. Network-mounted reads can cause OS-level traffic.
 
-Include the tool/data versions, OS, finding ID and a synthetic reproduction.
-Useful security reports include secret disclosure, unexpected file writes,
-network traffic in default mode, executed project code, and false safety verdicts.
+Project reads reject traversal, symlinks/reparse points and special files and
+recheck containment at read time. Unix opens use O_NOFOLLOW/O_NONBLOCK; Windows
+opens reparse points without following them. These checks are not an atomic
+sandbox against concurrent replacement of parent directories. Audit stable local
+snapshots. Endpoint system CA symlinks are followed intentionally.
 
-Default audits read local files only. `--commands` trusts installed executables,
-PATH and their startup hooks; this is an explicit opt-in, not a sandbox.
-`--network-test` is another explicit opt-in. Reports saved with `--output` remain
-local unless the caller uploads them. Cloud assistants have their own data flow.
-Indicator checksums detect accidental changes, not malicious replacement of both
-data and checksums. Review distributions before running them.
+Default project bounds are 20,000 directory entries and 1 MiB per file. Endpoint
+bundles and probe stdout are limited to 16 MiB. Invalid UTF-8 and incomplete
+certificates produce gaps. Custom --data-dir content is trusted operator input;
+its hashes detect inconsistency, not replacement of both data and checksums.
 
-Static parsing is bounded but not designed to resist every resource-exhaustion
-attack. Audit an immutable copy of untrusted input under OS resource limits.
-No scan can establish that credentials were never intercepted.
+Reports withhold raw source, arbitrary filenames, certificate subjects and
+unrecognized version strings. Paths use opaque hashes, which still allow
+correlation and are not encryption. Sharing reports with online assistants is a
+separate transmission. Explicit --output creates a new file and refuses overwrite.
+
+No scan establishes effective trust across all clients or proves credentials
+were never intercepted. Binaries are not currently signed/notarized; SHA256SUMS
+checks download integrity against the published manifest, not publisher identity
+independently of GitHub. Review release provenance and operating-system warnings.

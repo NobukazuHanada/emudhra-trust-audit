@@ -1,43 +1,36 @@
 # Contributing
 
-Use Python 3.9+; runtime code uses the standard library. Development tools are
-installed explicitly in a virtual environment (this setup is not an audit):
+Use Rust 1.99.1 (stable, pinned in rust-toolchain.toml; also the declared MSRV).
+Cargo.lock is committed for reproducible dependency selection. Newer toolchains
+are not a substitute for validating the declared minimum. Keep changes narrowly
+scoped and preserve the safety invariants in AGENTS.md.
 
-```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install pytest ruff build
-.venv/bin/python -m pytest
-.venv/bin/python -m ruff check .
-.venv/bin/python -m ruff format --check .
-.venv/bin/python -m build
-```
+Run `cargo fmt --all -- --check`, `cargo clippy --locked --all-targets -- -D warnings`,
+`cargo test --locked --all-targets`, `cargo run --locked -- data --verify`, and
+`cargo run --locked --example maintenance -- skills` before submitting changes.
+CI runs these on Linux, macOS and Windows. Unix-only FIFO/permission/link tests
+are platform gated; Windows response parsing and scope logic run on every OS.
 
-On Windows use `py -3 -m venv .venv` and `.venv\Scripts\python`.
-Run `python -B bin/emudhra-trust-audit.py data --verify` and build the standalone
-skills with `python scripts/build_skills.py <new-empty-directory>`.
-CI runs tests, lint, formatting, data verification, skill builds and wheel smoke
-checks on Linux, macOS and Windows with Python 3.9, 3.12 and 3.14.
-Mocked OS responses do not replace testing a real patched and unpatched system.
+Add regression tests for observable behavior rather than source wording. Tests
+must use synthetic certificates and secrets; do not upload real reports, trust
+stores, credentials or personal paths. Fixtures are not to be installed as CAs.
 
-Keep indicators and matching rules in `data/`, with sources, date and version.
-Verify advisories against primary vendor/CA-program sources. Do not silently
-extend a distribution's fixed version to a different distribution or branch.
-After a reviewed data edit, run
-`python -B bin/emudhra-trust-audit.py data --write-checksums` and review the resulting
-digests. Never add runtime downloads of indicator data or remote fix scripts.
-Checksums provide integrity, not authenticity; changes still need review.
+Indicator updates need a source URL, retrieval/as-of date and dataset version.
+Recheck vendor sources; the current version table is a dated community snapshot.
+`cargo run --locked -- data --checksums data` prints a new checksum manifest to
+stdout. Review and save it to data/checksums.json, then rebuild and verify.
+LF, CRLF and CR are equivalent for these hashes; other byte changes are detected.
+A checksum is not an authenticity signature. Runtime code never updates data.
 
-Add regression tests for behavior, including malformed inputs, incomplete
-coverage, no-network/no-write defaults, privacy and confidence. Use synthetic
-certificates with no private keys in the repository. Do not add third-party PEMs,
-scripts or archives without documenting redistribution permission and attribution.
-Each finding ID must have an explanation in `explanations.py`.
+Dependencies must have an acceptable license and a specific Cargo.lock entry.
+CI uses cargo-deny for advisory, license and source checks without adding it to
+product dependencies. `cargo run --locked --example maintenance -- licenses NEW_DIR`
+checks declared license metadata and gathers third-party texts for packaging.
+Run it after `cargo fetch --locked` so all resolved sources are available. Do not
+commit generated license directories, build outputs or downloaded binaries.
 
-The existing Python 3.9 typing and percent-formatting style is accepted by lint;
-Ruff formats layout. Long explanatory strings are exempt from E501. Correctness,
-unused imports and other configured rules still run.
-
-Contributions are provided under Apache-2.0. Preserve NOTICE and third-party
-attribution. Before publication set the actual repository URL, enable private
-vulnerability reporting, and verify all three CI platforms. Publishing and pushing
-are separate human actions; build/test commands never publish anything.
+`sh scripts/package.sh TARGET ABSOLUTE_BINARY NEW_OUTPUT_DIR` prepares an archive
+with both READMEs, license notices, data and independently usable skill folders.
+The Release artifacts workflow builds five targets and SHA256SUMS. Manual runs
+upload Actions artifacts only. Pushing a v* tag publishes a GitHub Release; obtain
+explicit release authorization before creating any tag. Keep translations aligned.

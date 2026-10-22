@@ -2,138 +2,157 @@
 
 # emudhra-trust-audit
 
-**非公式の独立したコミュニティプロジェクトです。eMudhraとは提携しておらず、同社の公式ツールでも、同社が推奨する製品でもありません。**
+**非公式の独立したプロジェクトです。eMudhraとは提携しておらず、同社が運営・推奨するツールでもありません。**
 
-[eMudhra中間CA鍵の侵害](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449)に関する、ローカル・読み取り専用の監査ツールと独立した2つのAgent Skillsです。マルウェア感染の検査ではありません。
+[eMudhra中間CA鍵の問題](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449)を調査するRust製CLIと、Claude Code／Codex向けの2スキルです。実行ファイルにIOCデータを同梱しています。**利用者はPython・Rust・Cargoなどの言語ランタイムを導入する必要がありません。** マルウェア検査ではなく、「検出なし」は安全の証明でもありません。
 
-- **endpoint-trust-audit**: macOS / Linux / WindowsのCAストア、CA上書き環境変数、TLS設定、ランタイム・CLIの調査。
-- **project-trust-audit**: 指定プロジェクトの依存、ロックファイル、CAバンドル、ビルド・開発ツール、コンテナ・CI・TLS関連設定の静的調査。
+- **endpoint-trust-audit**：端末のCAバンドル、TLS上書き設定、クライアント設定を調査し、明示的な許可があればOSストアや導入済みツールも照会します。
+- **project-trust-audit**：プロジェクト内の依存、ロックファイル、CAバンドル、ツール指定、コンテナ、CI、TLS設定を、プロジェクトのコードを実行せず調査します。
 
-Python 3.9以上、実行時の追加依存なし。既定では外部コマンド・ネットワーク・ファイル書き込みなし。自動修復はしません。これは初期版であり、**「検出なし」は「安全」の証明ではありません**。
+既定の監査はローカルファイルの読取りだけです。データ取得、報告送信、信頼ストア変更、パッケージ導入、自動修復は行いません。`--output` を明示した場合だけ新規レポートを保存し、既存ファイルは上書きしません。
 
-## 対応環境
+## 対応環境と配布
 
-macOS・Linux・Windows、Python 3.9以上を対象としています。Python 3.9は旧環境との互換性確認対象であり、Python自体の保守・セキュリティ更新を提供するものではありません。新規導入では保守中のPythonを使用してください。CIはUbuntu 22.04、macOS latest、Windows latestでPython 3.9・3.12・3.14を検証します。Ubuntu latestが26.04へ移りPython 3.9を取得できなくなったため、Linuxを22.04へ固定しています。全OSバージョン・全Pythonマイナーバージョンの動作を保証するものではありません。CIの模擬ストア検査は実端末の全クライアント検証を代替しません。
+| 環境 | アーカイブのターゲット名 |
+| --- | --- |
+| macOS Apple Silicon | `aarch64-apple-darwin` |
+| macOS Intel | `x86_64-apple-darwin` |
+| Linux x86_64 | `x86_64-unknown-linux-musl` |
+| Linux arm64 | `aarch64-unknown-linux-musl` |
+| Windows x86_64 | `x86_64-pc-windows-msvc` |
 
-## すぐ実行する
+Linux配布版はmuslを使い、glibcのバージョンに依存しない構成です。macOSとWindowsでは標準のOS機能を使います。CIはホストされたLinux・macOS・Windowsで検証しますが、過去の全OSバージョン、企業ポリシー、実ストアでの動作を保証しません。バイナリの署名・公証は現時点では行っていません。
 
-ソース一式を取得し、そのディレクトリから実行します。Windowsでは `python3 -B` を `py -3 -B` に読み替えてください。パスに空白がある場合は引用符で囲みます。
+[GitHub Releases](https://github.com/NobukazuHanada/emudhra-trust-audit/releases)から環境に合うアーカイブと `SHA256SUMS` を取得し、展開前にSHA-256を一覧の該当行と照合してください。例：
+
+```sh
+# Linux
+sha256sum emudhra-trust-audit-x86_64-unknown-linux-musl.tar.gz
+# macOS
+shasum -a 256 emudhra-trust-audit-aarch64-apple-darwin.tar.gz
+```
+
+```powershell
+# Windows PowerShell
+Get-FileHash .\emudhra-trust-audit-x86_64-pc-windows-msvc.tar.gz -Algorithm SHA256
+tar -xf .\emudhra-trust-audit-x86_64-pc-windows-msvc.tar.gz
+```
+
+macOS／Linuxでは `tar -xzf ARCHIVE.tar.gz` で展開します。実行ファイルを直接起動するか、信頼できるPATH上のディレクトリへ置いてください。再配布時はライセンスと帰属表示を保持してください。未確認のダウンロードをシェルへ直接流し込まないでください。SHA-256は一覧との整合性を確認するもので、GitHubとは独立した発行者の真正性証明ではありません。
+
+**Rustへの移行作業自体ではタグやReleaseを公開しません。** タグ付きReleaseが公開されるまではソースからビルドするか、手動の [Release artifactsワークフロー](https://github.com/NobukazuHanada/emudhra-trust-audit/actions/workflows/release.yml)が成功したrunの `release-assets-with-checksums` を利用してください。手動実行はアーカイブ生成だけで、Releaseを公開しません。
+
+## ソースからビルド
+
+開発者は[Rustツールチェーン](https://rust-lang.org/tools/install/)を用意します。Pythonは不要です。安定版 **Rust 1.99.1** を `rust-toolchain.toml` で固定し、最小対応Rustバージョン（MSRV）も1.99.1としています。ビルド依存は `Cargo.lock` に固定しており、ビルド時にダウンロードする場合があります。
 
 ```sh
 git clone https://github.com/NobukazuHanada/emudhra-trust-audit.git
 cd emudhra-trust-audit
-python3 -B bin/emudhra-trust-audit.py endpoint --format json
-python3 -B bin/emudhra-trust-audit.py project /path/to/project --format json
-python3 -B bin/emudhra-trust-audit.py data --verify
-python3 -B bin/emudhra-trust-audit.py explain ENDPOINT-SPKI-TRUSTED
+cargo build --locked --release
+./target/release/emudhra-trust-audit data --verify
 ```
 
-実行コマンドが必要なOSストア・バージョン調査は既定で判定不能になります。信頼できるインストール済みツールを調べる場合のみ `endpoint --commands` を明示します。実行ファイルのPATH、Pythonの起動フック、Nodeの環境設定等が信頼できない端末では使わないでください。`--no-commands` は `--commands` より優先します。
+Windowsでは `.\target\release\emudhra-trust-audit.exe` を実行します。監査に必要なのはビルド済み実行ファイルだけで、インタープリター、パッケージ導入、隣接するデータディレクトリは不要です。この移行ではcrates.ioへのパッケージ公開も行いません。
 
-`--bundle PATH`（端末）と `--scan-bundle FILE`（プロジェクト）で追加バンドルを指定できます。`--output FILE` は明示した場合だけレポートを書きます。通常はstdoutのみです。`--network-test HOST` は任意の追加機能で、接続先へのIPアドレス等の開示に同意した場合だけ使用してください。別接続で取得した証明書とハンドシェイク結果を結びつけて、安全・危険を断定しません。
-
-CLIコマンドとしてインストールする場合は、専用の仮想環境で `python -m pip install .` を実行し、`emudhra-trust-audit --help` で確認できます。PyPIへの公開は行っていません。ビルド時にはビルド依存の取得が必要になる場合があります。
-
-## Claude Code / Codexへの導入
-
-リポジトリ直下の `skills/` は開発用です。次のコマンドで共通実装・IOCデータ・ライセンスを各スキルに同梱します。生成先が既存の場合は上書きせず停止します。
+## 監査を実行する
 
 ```sh
-python3 scripts/build_skills.py dist/skills
+emudhra-trust-audit endpoint --format json
+emudhra-trust-audit project /path/to/project --format json
+emudhra-trust-audit data --verify
+emudhra-trust-audit explain PROJECT-TLS-VERIFY-NODE-ENV
 ```
 
-生成された2つのフォルダを、必要なものだけ以下へ丸ごとコピーしてください。どちらも単独で動作し、もう一方のスキルや元のチェックアウトを必要としません。
+Windowsでカレントディレクトリにある実行ファイルを使う場合は `.\emudhra-trust-audit.exe` と指定します。空白を含むパスは引用符で囲んでください。
+
+- `endpoint --bundle PATH`／`project --scan-bundle FILE`：明示した追加CAソースを検査します。
+- `endpoint --commands`：信頼できる導入済み実行ファイルの照会を許可します。プロジェクト由来のシェル文字列ではなく、固定の引数列を使用します。ただしツール自身や起動フックは書込み・ダウンロード・テレメトリー送信を行う可能性があります。既定の `--no-commands` が優先されます。
+- `endpoint --no-user-stores`：ユーザー別ストアとユーザーのクライアント設定を除外します。
+- `endpoint --network-test HOST --commands`：導入済みOpenSSLによるTLS接続を明示的に許可します。送信元IPなどの接続情報が相手に伝わります。443番ポートのホスト名・IPを受け付け、URLやシェル式は受け付けません。接続失敗はCA拒否の証明ではなく、1クライアント・1チェーンの結果を他へ一般化できません。
+- `project --no-containers`：コンテナ固有検査を省きます。
+- `--format json|text|sarif`：出力形式を選択します。`--output NEW_FILE` で明示的に保存できます。
+- `--data-dir DIR`：同梱データの代わりに、レビュー済みの外部データを使います。ネットワーク更新は行いません。
+
+管理者権限は不要です。読めないストアは検査不足として報告します。
+
+## Claude Code／Codexのスキル
+
+各配布アーカイブには `skills/endpoint-trust-audit/` と `skills/project-trust-audit/` があり、それぞれにバイナリとライセンスを同梱します。必要なフォルダを**丸ごと**以下へコピーしてください。
 
 | ホスト | 個人用 | プロジェクト用 |
 | --- | --- | --- |
 | Claude Code | `~/.claude/skills/` | `.claude/skills/` |
 | Codex | `~/.agents/skills/` | `.agents/skills/` |
 
-Windowsの `~` はユーザープロファイルディレクトリです。エクスプローラーでコピーでき、シンボリックリンクや管理者権限は不要です。スキルを再検出させるためセッションを再起動してください。導入場所は [Claude Code公式資料](https://code.claude.com/docs/en/skills) と [Codex公式資料](https://learn.chatgpt.com/docs/build-skills) に基づきます。
+Windowsの `~` はユーザープロファイルです。確実に再検出させるにはアシスタントのセッションを再起動してください。場所は [Claude Code](https://code.claude.com/docs/en/skills) と [Codex](https://learn.chatgpt.com/docs/build-skills) の公式資料に基づきます。ソースのスキルフォルダにはバイナリを含まないため、CLIをビルドして信頼できるPATHに置くか、アシスタント起動前に `EMUDHRA_TRUST_AUDIT_BIN` へ絶対パスを設定してください。
 
-Claude Codeでは `/endpoint-trust-audit` または `/project-trust-audit`、Codexでは `$endpoint-trust-audit` または `$project-trust-audit` を指定し、例えば「この端末をオフラインで検査」「カレントプロジェクトを変更せず検査」と依頼します。
+Claude Codeでは `/endpoint-trust-audit`／`/project-trust-audit`、Codexでは `$endpoint-trust-audit`／`$project-trust-audit` を指定し、「端末をオフラインで検査」「現在のプロジェクトを変更せず検査」と依頼します。
 
-スキルの `run.py` は任意のカレントディレクトリから実行可能です。例：
+ラッパーは引数と終了コードを保持します。
 
 ```sh
-python3 -B /absolute/path/endpoint-trust-audit/run.py endpoint --format json
-python3 -B /absolute/path/project-trust-audit/run.py project . --format json
+sh /absolute/skill-dir/run.sh --format json          # endpoint skill
+sh /absolute/skill-dir/run.sh /path/to/project --format json  # project skill
 ```
 
-## 結果と終了コード
+```powershell
+& 'C:\absolute\endpoint-trust-audit\run.ps1' --format json
+& 'C:\absolute\project-trust-audit\run.ps1' . --format json
+```
 
-JSONは `schema_version`, `verdict`, `action`, `exit_code`, `findings`, `data_sources`, `notes`, `errors` を含みます。各findingに根拠・信頼度・出典・対策を収録します。`--format text` と `--format sarif` も利用できます。
+明示したバイナリ、同梱バイナリ、信頼できるPATH上のアプリケーションの順に選びます。未導入なら導入案内と終了コード3を返し、自動ダウンロードしません。組織の実行ポリシーを回避せず、ラッパーが制限される場合は信頼できるCLIを直接実行してください。検査対象はスキルのフォルダではなく、ユーザーのプロジェクトです。
+
+## 出力と解釈
+
+JSONは `schema_version`、`tool_version`、`scope`、`verdict`、`action`、`exit_code`、`findings`、`data_sources`、`notes`、`errors` を含みます。各findingに根拠、信頼度、対処案、出典、位置参照を記録します。
 
 | status | 意味 |
 | --- | --- |
-| `known_indicator` | IOC・規則との一致を観測 |
-| `suspicious` | 文字列・パターン一致。実際の用途は要確認 |
-| `not_found` | 実施できた検査の範囲では見つからない |
-| `unable_to_assess` | 未対応、読み取り失敗、証拠不足などで判定不能 |
+| `known_indicator` | IOC・規則との一致。傍受の証明ではない |
+| `suspicious` | 確認が必要なヒューリスティック |
+| `not_found` | 実施できた検査では見つからない |
+| `unable_to_assess` | 証拠不足・未対応・読取り不可。合格ではない |
 
 | 終了コード | 意味 |
 | --- | --- |
-| 0 | 実施した検査からの追加対策なし。安全保証ではない |
-| 1 | 要確認・判定不能あり |
-| 2 | 要対策項目あり |
-| 3 | データ不整合、入力・実行エラー |
+| 0 | 実施済み検査から追加対策なし。安全保証ではない |
+| 1 | 検査不足を含む要確認 |
+| 2 | 要対策 |
+| 3 | 監査・入力・整合性・出力エラー |
 
-`UNKNOWN` と `action_required` は両立します。鍵が保存されている事実は対策検討の根拠になりますが、稼働クライアントの受理を証明しません。`EXPOSED` / `BLOCKED` は実効受理・拒否を示す予約済みの判定語であり、現在のストア・バージョン調査では断定しません。`INSECURE` はTLS検証無効化に関する所見を含むため、statusとconfidenceを確認してください。
+`UNKNOWN` と要対策は両立します。鍵の保存、ブロックリスト、バージョンだけで実効受理・拒否を証明できません。Rust CLIは `EXPOSED`／`BLOCKED` を断定しません。`INSECURE` は既知のTLS無効化設定が見つかったことを示すので、実際の用途を確認し最初に報告します。ドキュメント上の記述は重要度を下げ、テスト用の設定も人が用途を確認します。
 
-## 検査範囲と限界
+位置はファイル名ではなく `file:<hash>` 形式です。既知のプロジェクト相対パスは、ローカルで `emudhra-trust-audit file-id path/to/file` を実行すると照合できます。生のソース行、個人パス、証明書subject、プロキシ値、認識できないバージョン文字列は出力しません。
 
-- OS別の既知パスと、オプトイン時のキーチェーン／Windowsストア・ランタイム・パッケージ照会を実装。macOS/Windowsの既定モードはファイル調査に限定されます。
-- npm / Yarn / pnpm、requirements / Poetry / uv / Pipenv / PDM、Cargo、Go、Composer、Bundler、Hex等の限定的パーサーを収録。Bunバイナリ、NuGet、Gradle等は棚卸しのみで、判定不能として報告します。全形式・全構文・推移依存を完全に扱うものではありません。
-- CA関連の既知パッケージを比較する専用監査です。一般的なCVE、改変パッケージ、悪性依存を網羅するSCAではありません。
-- 既定で20,000ファイル・各1 MiBまで。シンボリックリンク、特殊ファイル、大きなファイル、依存インストール先、ビルド成果物等は対象外。`.ca-trust-audit-ignore` の除外は報告に記録されます。
-- コンテナ内へ入る、イメージを取得する、パッケージを解決する、プロジェクトのスクリプトを実行する処理はありません。WSL・コンテナ内の結果はその環境だけに適用します。
-- ローカルで中間証明書が見つからなくても、サーバーが提示するチェーンを信頼する場合があります。関連ルートの存在・削除だけでは安全性を断定できません。
-- 失効情報、稼働プロセスのキャッシュ、ブラウザ独自ポリシー、Schannel/Authenticodeの実効検証、Java PKCS#12等は未検証または未対応です。
-- Linuxでローカル検証済み。macOS/Windows向けには模擬応答テストとCIマトリクスを用意していますが、実機確認は別途必要です。
+## 検査範囲・プライバシー・限界
 
-## 対処
+PEM／DERのSPKIとJKS／JCEKSの信頼証明書エントリを解析します。秘密鍵の復号やキーストアのパスワードダイジェスト検証はしません。macOSキーチェーン、WindowsのRoot／CA／Disallowed列挙は `--commands` が必要で、Windows更新ポリシーも解析します。macOS／Windowsの既定動作はファイル検査です。
 
-OS・ブラウザ・CAパッケージ・ランタイムを公式経路から更新し、使用中のプロセスを再起動します。独自バンドル、仮想環境、CIイメージ・コンテナも更新して再構築・再配備し、再検査してください。TLS検証の無効化を回避策にしないでください。ルート証明書を一律に削除しないでください。
+npm、Yarn、pnpm、requirements、Poetry／uv／PDM／Cargoのロック、Pipfile、Composer、Bundler、Hex、Go、`.nvmrc`、`.node-version`、`.go-version`、`.tool-versions`、単純なmise指定の部分的パーサーを持ちます。CIのランタイム指定、コンテナのCA更新・ダイジェスト固定も調べます。未対応形式、不正データ、ロック欠落、未知のブランチ、数値以外やプレリリースを含む汎用バージョンは検査不足とします。一般的なCVE／SCAスキャナーや依存リゾルバーではありません。
 
-認証情報のローテーションは、実際の接続・認証・改変の証拠を調査して対象を決めます。一律に「全部交換」「交換不要」と判断しません。スキャナーは認証情報も信頼設定も変更しません。
+プロジェクトは20,000ディレクトリエントリ・1ファイル1 MiBが上限です。リンク／reparse point、特殊ファイル、大きなファイル、不正UTF-8は除外して報告します。ビルド・依存ディレクトリは対象外です。除外ファイル名は `.ca-trust-audit-ignore` を維持し、明示的な除外を報告します。端末バンドルとプローブ出力は16 MiB、プローブは10秒が上限です。
 
-## プライバシーと脅威モデル
+OSのCAシンボリックリンクは意図的に追跡します。親ディレクトリ差替えの競合を完全に隔離するものではないため、安定したローカルスナップショットを使ってください。ネットワークマウントはOS通信を発生させ得ます。外部ツールはサンドボックス化されません。コンテナ／WSLの結果はその環境だけに適用します。ブラウザの失効情報、Windows CTLの鮮度、プロセスのキャッシュ、PKCS#12／PKCS#7、全クライアントの実効検証は確立しません。Python／certifi環境は実行しません。`VIRTUAL_ENV`／`CONDA_PREFIX` 内の既知のcertifiバンドル・メタデータは直接読み取り、それ以外の環境はロックファイルと明示的なCAバンドルで別途検査します。
 
-既定のスキャナーは外部送信しません。ソース行、トークン、プロキシURL、秘密鍵本文をレポートへ出さず、ユーザー名・ホームパスを伏せます。報告には相対ファイル名、公開パッケージ名、バージョンなどが含まれるため、共有前に確認してください。任意のファイル名へ埋め込まれた未知の秘密を完全に識別できる保証はありません。
+**オンラインのClaude／Codexへ出力を渡す行為は、スキャナーの通信とは別です。** 完全にローカルへ閉じる場合はCLIを直接使い、外部サービスへ報告を渡さないでください。パスのハッシュは相互照合可能で、暗号化ではありません。秘匿を解除するためにアシスタントへ生ファイルを読ませないでください。実際のスキル検出・呼出しや端末ポリシーは導入先での確認が必要です。
 
-**オンラインのClaude/Codexへ出力を渡す行為は、スキャナー自身の通信とは別です。** 完全に端末内に閉じる必要がある場合はCLIを直接実行し、出力を外部サービスに渡さないでください。AIに生の設定ファイルを追加で貼り付けさせないでください。信頼できないディレクトリは変更されないスナップショットで調査してください。
+## 対処とデータ
 
-## 開発・テスト
+OSの信頼パッケージ、ブラウザ、ランタイム、独自バンドルを公式経路で更新します。プロセスを再起動し、仮想環境、CI／コンテナイメージ、アプリケーションを再構築・再配備します。TLS検証の無効化や関連ルートの一律削除は行わないでください。監査はこれらの変更を自動実行しません。認証情報のローテーション対象は、実際の接続・認証・傍受の証拠で判断し、検査結果だけで「全部交換」「交換不要」と断定しません。
 
-開発用の仮想環境で次を実行します。Windowsでは `python3` を `py -3` に読み替えてください。
+IOC・規則は `data/` に出典・日付・バージョン付きで管理します。SHA-256はCRLF／CRをLFへ正規化し、それ以外のバイト変更を検出します。整合性検査であり署名ではありません。同梱データはレビュー済みコミットと新バイナリで更新し、実行時の取得はしません。修正版表の多くは2026-10-21の[コミュニティ追跡サイト](https://emudhra.we-have-a-problem.com/)のスナップショットなので、保守時はベンダー資料を再確認してください。移行差分と残存リスクは [AUDIT.md](AUDIT.md) に記録しています。
+
+## 開発・Release・ライセンス
 
 ```sh
-python3 -m pip install pytest ruff build
-python3 -m pytest
-python3 -m ruff check .
-python3 -m ruff format --check .
-python3 -B bin/emudhra-trust-audit.py data --verify
-python3 scripts/build_skills.py dist/skills
-python3 -m build
+cargo fmt --all -- --check
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked --all-targets
+cargo run --locked -- data --verify
+cargo run --locked --example maintenance -- skills
 ```
 
-既存の生成先がある場合は、空の新しい出力ディレクトリを指定してください。テストはLF・CRLF・CRのデータ読取り、改行変換後の改変検出、元のチェックアウト外での単独スキル実行も検証します。スキルを編集した場合は、`skill-creator` が提供する `quick_validate.py` で両方のスキルを検証してください。この補助検証ツールは本リポジトリには同梱していません。
+CIではcargo-denyでアドバイザリ、ライセンス、依存の取得元も検査します。製品実行時の依存は増えません。配布物にはロックされた依存のライセンス本文を含めます。Releaseワークフローは上記5ターゲットをビルド・実行検証し、アーカイブの `SHA256SUMS` を生成します。`v*` タグではReleaseを公開し、手動実行はActions成果物のアップロードだけです。明示的な承認なしにReleaseタグを作成しないでください。
 
-## データ・開発・ライセンス
-
-IOC・規則・修正版表は `data/` に分離し、出典URL・更新日・版・SHA-256を記録しています。ネットワーク更新はせず、変更はレビューするコミットとして管理します。JSONのSHA-256はCRLF・CRをLFに正規化して計算し、それ以外のバイトの変更は検出します。`.gitattributes` でもチェックアウト時の改行をLFに固定しています。ハッシュは整合性確認であり、署名や出典の正しさの保証ではありません。修正版表の多くは[コミュニティ追跡サイト](https://emudhra.we-have-a-problem.com/)に基づく2026-10-21のスナップショットです。保守時は各ベンダーの一次資料と再照合してください。
-
-[CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.md](SECURITY.md)、[CHANGELOG.md](CHANGELOG.md)を参照してください。Apache-2.0で公開するためのソース一式です。[LICENSE](LICENSE)・[NOTICE](NOTICE)を同梱しています。eMudhra、Anthropic、OpenAI、GitHubとの提携・推奨関係はありません。第三者の修復スクリプトや侵害証明書は同梱せず、テスト証明書は合成フィクスチャです。
-
-## 独立監査（2026-10-22）
-
-再監査の変更・検証・残存リスクは [AUDIT.md](AUDIT.md) に記録しています。
-プロジェクトのリンクは読取り直前にも拒否し、端末の証明書・キーストアは上限付きの通常ファイル読取りに限定しています。端末のOS証明書リンクは正規のストアで使われるため追跡します。プロジェクトの既定上限は1 MiB、端末のバンドル読取りは通常16 MiB（証明書ファイルAPIは32 MiB）です。
-
-`--commands` はプロセスの隔離機能ではありません。起動フックやツール自身の通信・書込みまで保証できません。オフライン保証が必要なら既定モードとローカルの固定スナップショットを使用してください。ネットワークマウントの読取りはOS側で通信し得ます。実行中に親ディレクトリが差し替わる競合を全OSで原子的に防ぐものではありません。
-
-`.nvmrc` / `.node-version` / `.go-version` / `.tool-versions` と単純な mise `[tools]` バージョン指定を比較します。未解析のmanifestも検査不足として報告します。コメント・条件分岐・テスト内のTLS設定や複雑なTOMLは静的パターン検査の限界があり、結果の用途確認が必要です。
-
-## 名称変更と互換性
-
-製品・GitHubリポジトリ・配布パッケージ・CLI名は `emudhra-trust-audit` です。ソース実行用スクリプトも `bin/emudhra-trust-audit.py` に変更しました。既存の呼出しスクリプトは更新してください。互換性のため、Pythonモジュール `ca_trust_audit`、データ指定環境変数 `CA_TRUST_AUDIT_DATA_DIR`、除外ファイル `.ca-trust-audit-ignore` は維持しています。2つのスキル名は変更していません。過去の監査記録と合成証明書のsubjectには旧名称が残ります。
+[CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.md](SECURITY.md)、[VALIDATION.md](VALIDATION.md)、[CHANGELOG.md](CHANGELOG.md)を参照してください。**Apache-2.0**で、[LICENSE](LICENSE)、[NOTICE](NOTICE)、第三者帰属表示を同梱します。合成証明書フィクスチャに秘密鍵は含みません。eMudhra、Anthropic、OpenAI、GitHubとの提携を示すものではありません。旧Pythonパッケージ／モジュール、Python固有のビルド・テスト・スキルヘルパーは削除しました。過去の検証はGit履歴に残っています。

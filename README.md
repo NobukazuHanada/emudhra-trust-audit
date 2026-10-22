@@ -2,137 +2,157 @@
 
 # emudhra-trust-audit
 
-**An unofficial, independent community project. This is not an eMudhra tool and is not affiliated with or endorsed by eMudhra.**
+**Unofficial and independent. This project is not affiliated with, endorsed by or operated by eMudhra.**
 
-A local, read-only audit tool and two independent Agent Skills for the [eMudhra intermediate CA key compromise](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449). This is not a malware scanner.
+A Rust command-line auditor for the [eMudhra intermediate CA key incident](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449), with two skills for Claude Code and Codex. The executable includes its indicator data. **Users do not need Python, Rust, Cargo or another language runtime.** This is not a malware scanner, and “not detected” is not proof of safety.
 
-- **endpoint-trust-audit** inspects CA stores, CA override environment variables, TLS settings, runtimes and developer CLIs on macOS, Linux and Windows.
-- **project-trust-audit** statically inspects a project's dependencies, lockfiles, CA bundles, build and development tools, containers, CI and TLS settings.
+- **endpoint-trust-audit**: inspect this machine's CA bundles, TLS overrides and client configuration; optionally query OS stores and installed tools.
+- **project-trust-audit**: inspect a repository's dependencies, lockfiles, CA bundles, tool pins, containers, CI and TLS settings without running project code.
 
-Requires Python 3.9 or later, with no runtime dependencies beyond the standard library. By default, audits execute no external commands, make no network connections and write no files. There is no automatic remediation. This is an early release: **“not detected” does not mean “safe.”**
+Default audits only read local files. They do not download data, send reports, modify trust stores, install packages or perform remediation. Explicit `--output` creates a new report file and refuses to overwrite an existing file.
 
-## Supported environments
+## Platforms and distribution
 
-Targets macOS, Linux and Windows with Python 3.9 or later. Python 3.9 remains a legacy compatibility target; this project does not provide maintenance or security updates for Python itself. Use a maintained Python release for new installations. CI covers Python 3.9, 3.12 and 3.14 on Ubuntu 22.04, macOS latest and Windows latest. Linux is pinned to 22.04 because Ubuntu latest moved to 26.04, where setup-python could not obtain Python 3.9. This does not establish support for every OS release or every Python minor version. Mocked store tests in CI do not replace validation of all clients on a real endpoint.
+| Platform | Archive target |
+| --- | --- |
+| macOS Apple Silicon | `aarch64-apple-darwin` |
+| macOS Intel | `x86_64-apple-darwin` |
+| Linux x86_64 | `x86_64-unknown-linux-musl` |
+| Linux arm64 | `aarch64-unknown-linux-musl` |
+| Windows x86_64 | `x86_64-pc-windows-msvc` |
 
-## Quick start
+Linux release builds use musl to avoid a glibc-version dependency. macOS and Windows use their standard OS facilities. CI covers hosted Linux, macOS and Windows; it does not guarantee every historical OS release, enterprise policy or real trust store. Binaries are not currently signed or notarized.
 
-Clone the source and run from its root. On Windows, replace `python3 -B` with `py -3 -B`. Quote paths containing spaces.
+Download the matching archive and `SHA256SUMS` from [GitHub Releases](https://github.com/NobukazuHanada/emudhra-trust-audit/releases). Verify the archive's SHA-256 against its line in the manifest before extracting it. For example:
+
+```sh
+# Linux
+sha256sum emudhra-trust-audit-x86_64-unknown-linux-musl.tar.gz
+# macOS
+shasum -a 256 emudhra-trust-audit-aarch64-apple-darwin.tar.gz
+```
+
+```powershell
+# Windows PowerShell
+Get-FileHash .\emudhra-trust-audit-x86_64-pc-windows-msvc.tar.gz -Algorithm SHA256
+tar -xf .\emudhra-trust-audit-x86_64-pc-windows-msvc.tar.gz
+```
+
+On macOS/Linux use `tar -xzf ARCHIVE.tar.gz`. Run the extracted executable directly, or put it in a trusted directory on PATH. Keep licenses and notices when redistributing it. Never pipe an unreviewed download into a shell. SHA-256 checks integrity against the manifest, not authenticity independently of GitHub.
+
+**The Rust migration does not itself publish a tag or Release.** Until a tagged release is published, use a source build or the `release-assets-with-checksums` artifact from a successful manual [Release artifacts workflow](https://github.com/NobukazuHanada/emudhra-trust-audit/actions/workflows/release.yml). Manual runs build archives only; they do not publish a Release.
+
+## Build from source
+
+Developers need the [Rust toolchain](https://rust-lang.org/tools/install/), not Python. Stable Rust **1.99.1** is pinned in `rust-toolchain.toml` and is the declared minimum supported Rust version (MSRV). Build dependencies are locked in `Cargo.lock`; builds may download them.
 
 ```sh
 git clone https://github.com/NobukazuHanada/emudhra-trust-audit.git
 cd emudhra-trust-audit
-python3 -B bin/emudhra-trust-audit.py endpoint --format json
-python3 -B bin/emudhra-trust-audit.py project /path/to/project --format json
-python3 -B bin/emudhra-trust-audit.py data --verify
-python3 -B bin/emudhra-trust-audit.py explain ENDPOINT-SPKI-TRUSTED
+cargo build --locked --release
+./target/release/emudhra-trust-audit data --verify
 ```
 
-OS-store and version checks that require executable probes are reported as unable to assess by default. Use `endpoint --commands` only to inspect trusted installed tools. Do not use it if executable lookup through PATH, Python startup hooks or Node environment settings are untrusted. `--no-commands` takes precedence over `--commands`.
+On Windows run `.\target\release\emudhra-trust-audit.exe`. Only the built executable is required for audits; there is no interpreter, package installation or adjacent data directory requirement. No crates.io package is published as part of this migration.
 
-Use `--bundle PATH` for an additional endpoint bundle or `--scan-bundle FILE` for a project bundle. Reports go to stdout unless you explicitly request `--output FILE`. Optional `--network-test HOST` requires consent to disclose your IP address and other connection information to the destination. Certificates and handshake results obtained over separate connections are not combined into a claim of safety or exposure.
-
-To install the CLI, run `python -m pip install .` in a dedicated virtual environment, then check `emudhra-trust-audit --help`. No package has been published to PyPI. Building may require downloading build dependencies.
-
-## Install in Claude Code or Codex
-
-The root `skills/` directory is for development. Build portable skills to bundle the shared implementation, indicator data and licenses into each skill:
+## Run an audit
 
 ```sh
-python3 scripts/build_skills.py dist/skills
+emudhra-trust-audit endpoint --format json
+emudhra-trust-audit project /path/to/project --format json
+emudhra-trust-audit data --verify
+emudhra-trust-audit explain PROJECT-TLS-VERIFY-NODE-ENV
 ```
 
-An existing destination is not overwritten. Copy either or both generated folders, in full, to the appropriate location. Each works independently of the other skill and the original checkout.
+On Windows, an executable in the current directory is invoked as `.\emudhra-trust-audit.exe`. Quote paths containing spaces.
 
-| Host | Personal | Project |
+- `endpoint --bundle PATH` or `project --scan-bundle FILE`: inspect an additional explicit CA source.
+- `endpoint --commands`: opt in to trusted installed executable probes. They use fixed argument vectors, not project-controlled shell strings. Installed tools and startup hooks can nevertheless write, download or send telemetry. `--no-commands` is the default and takes precedence.
+- `endpoint --no-user-stores`: omit per-user stores and user client configuration.
+- `endpoint --network-test HOST --commands`: explicitly authorize a TLS connection through installed OpenSSL. Discloses source IP and connection metadata. Accepts a hostname or IP on port 443, not a URL or shell expression. A failed connection is not proof of CA rejection; one client/chain does not establish others' behavior.
+- `project --no-containers`: omit container-specific checks.
+- `--format json|text|sarif`: choose output. `--output NEW_FILE` explicitly saves it.
+- `--data-dir DIR`: use a reviewed external data snapshot instead of embedded data. No network update occurs.
+
+No administrator privileges are required. Unavailable stores are reported as coverage gaps.
+
+## Claude Code and Codex skills
+
+Each release archive contains `skills/endpoint-trust-audit/` and `skills/project-trust-audit/`, each with its own binary and license notices. Copy either folder **in full** to the appropriate location:
+
+| Host | Personal skills | Project skills |
 | --- | --- | --- |
 | Claude Code | `~/.claude/skills/` | `.claude/skills/` |
 | Codex | `~/.agents/skills/` | `.agents/skills/` |
 
-On Windows, `~` means your user profile directory. You can copy the folders in File Explorer; no symlinks or administrator privileges are required. Restart the session to ensure discovery. Locations follow the [Claude Code documentation](https://code.claude.com/docs/en/skills) and [Codex documentation](https://learn.chatgpt.com/docs/build-skills).
+On Windows, `~` means your user profile. Restart the assistant session to ensure discovery. Locations follow the [Claude Code](https://code.claude.com/docs/en/skills) and [Codex](https://learn.chatgpt.com/docs/build-skills) documentation. Source skill folders do not contain binaries: build/install the CLI on a trusted PATH, or set `EMUDHRA_TRUST_AUDIT_BIN` to its absolute path before launching the assistant.
 
-In Claude Code, invoke `/endpoint-trust-audit` or `/project-trust-audit`. In Codex, invoke `$endpoint-trust-audit` or `$project-trust-audit`. For example, ask “Audit this machine offline” or “Audit the current project without changing it.”
+In Claude Code invoke `/endpoint-trust-audit` or `/project-trust-audit`; in Codex invoke `$endpoint-trust-audit` or `$project-trust-audit`. Ask “Audit this endpoint offline” or “Audit the current project without changes.”
 
-A skill's helper can also run from any working directory:
+Wrappers preserve arguments and exit codes:
 
 ```sh
-python3 -B /absolute/path/endpoint-trust-audit/run.py endpoint --format json
-python3 -B /absolute/path/project-trust-audit/run.py project . --format json
+sh /absolute/skill-dir/run.sh --format json          # endpoint skill
+sh /absolute/skill-dir/run.sh /path/to/project --format json  # project skill
 ```
 
-## Results and exit codes
+```powershell
+& 'C:\absolute\endpoint-trust-audit\run.ps1' --format json
+& 'C:\absolute\project-trust-audit\run.ps1' . --format json
+```
 
-JSON contains `schema_version`, `verdict`, `action`, `exit_code`, `findings`, `data_sources`, `notes` and `errors`. Findings include evidence, confidence, sources and remediation. Text and SARIF output are available with `--format text` and `--format sarif`.
+They select the explicit binary path, a bundled binary, or a trusted PATH application. A missing binary produces installation guidance and exit 3; wrappers never download anything. Do not bypass organizational execution policy: invoke the trusted CLI directly if wrappers are restricted. Audit scope remains the user's project, not the skill directory.
+
+## Output and interpretation
+
+JSON includes `schema_version`, `tool_version`, `scope`, `verdict`, `action`, `exit_code`, `findings`, `data_sources`, `notes` and `errors`. Each finding includes evidence, confidence, remediation, sources and location references.
 
 | Status | Meaning |
 | --- | --- |
-| `known_indicator` | Observed a match against indicator data or rules |
-| `suspicious` | A text or pattern match whose actual use requires review |
-| `not_found` | Not found within checks that completed |
-| `unable_to_assess` | Unsupported input, read failure, insufficient evidence or another coverage gap |
+| `known_indicator` | Exact indicator or rule match; not proof of interception |
+| `suspicious` | Heuristic requiring confirmation |
+| `not_found` | Not found within completed checks |
+| `unable_to_assess` | Incomplete evidence or unsupported/unavailable input; never a pass |
 
-| Exit code | Meaning |
+| Exit | Meaning |
 | --- | --- |
-| 0 | No further action identified by completed checks; not a safety guarantee |
-| 1 | Review required, including unresolved coverage gaps |
+| 0 | No action identified by completed checks; not a safety guarantee |
+| 1 | Review required, including coverage gaps |
 | 2 | Action required |
-| 3 | Data integrity, input or execution error |
+| 3 | Audit, input, integrity or output error |
 
-`UNKNOWN` can coexist with `action_required`. A stored key warrants remediation review but does not prove that a running client accepts it. `EXPOSED` and `BLOCKED` are reserved for effective acceptance or rejection; current store and version checks do not establish either. `INSECURE` means findings include disabled TLS verification; inspect their status and confidence.
+`UNKNOWN` can coexist with action required. A stored key, blocklist entry or version string does not prove effective acceptance/rejection. The Rust CLI does not assert `EXPOSED` or `BLOCKED`. `INSECURE` means a recognized TLS-disabling setting was found; confirm actual use and report it first. Documentation matches are downgraded, and test fixtures still require human context.
 
-## Coverage and limitations
+Locations are opaque `file:<hash>` references, not filenames. Correlate a known project-relative path locally with `emudhra-trust-audit file-id path/to/file`. Raw source lines, personal paths, certificate subjects, proxy values and unrecognized version strings are withheld.
 
-- Implements known OS paths and opt-in keychain, Windows-store, runtime and package queries. Default macOS and Windows checks are limited to files.
-- Includes partial parsers for npm, Yarn, pnpm, requirements, Poetry, uv, Pipenv, PDM, Cargo, Go, Composer, Bundler and Hex. Binary Bun locks, NuGet and Gradle are inventory-only and reported as unable to assess. Not every format, syntax or transitive dependency is resolved.
-- Compares known CA-related packages. It is not general software composition analysis covering all CVEs, modified packages or malicious dependencies.
-- Defaults to 20,000 files and 1 MiB per project file. Symlinks, special files, oversized files, installed dependency directories and build outputs are excluded. Exclusions from `.ca-trust-audit-ignore` are recorded in the report.
-- Does not enter containers, fetch images, resolve packages or execute project scripts. Results inside WSL or a container describe that environment only.
-- A server may supply a trusted chain even if its intermediate is absent locally. The presence or removal of related roots alone does not establish safety.
-- Revocation freshness, running-process caches, browser-specific policies, effective Schannel/Authenticode validation and Java PKCS#12 are unverified or unsupported.
-- Local validation runs on Linux. Mocked macOS/Windows responses and a CI matrix are provided; real-device validation is still needed.
+## Coverage, privacy and limitations
 
-## Remediation
+The scanner parses PEM/DER SPKIs and trusted entries in JKS/JCEKS (without decrypting private keys or verifying the keystore password digest). macOS keychain and Windows Root/CA/Disallowed enumeration require `--commands`; Windows update-policy parsing is also covered. Default macOS/Windows audits remain file-only.
 
-Update the OS, browsers, CA packages and runtimes through official channels, then restart affected processes. Update custom bundles, virtual environments, CI images and containers; rebuild, redeploy and audit again. Never disable TLS verification as a workaround or indiscriminately delete root certificates.
+Partial parsers cover npm, Yarn, pnpm, requirements, Poetry/uv/PDM/Cargo locks, Pipfile, Composer, Bundler, Hex, Go, `.nvmrc`, `.node-version`, `.go-version`, `.tool-versions` and simple mise pins. CI runtime pins and container refresh/digest patterns are inspected. Unsupported formats, malformed data, missing lockfiles, unknown branches and non-numeric/prerelease generic versions remain gaps. This is not a general CVE/SCA scanner or a package resolver.
 
-Scope credential rotation using evidence of actual connections, authentication and modification. Neither “rotate everything” nor “rotation is unnecessary” is a blanket conclusion. The scanner changes neither credentials nor trust settings.
+Project reads are bounded to 20,000 directory entries and 1 MiB per file. Links/reparse points, special files, oversized files and invalid UTF-8 are excluded and reported. Build/dependency directories are skipped. `.ca-trust-audit-ignore` remains the exclusion filename; explicit exclusions are reported. Endpoint bundles and probe output are limited to 16 MiB; probes time out after 10 seconds.
 
-## Privacy and threat model
+System CA symlinks are followed intentionally. Use stable local snapshots: parent-directory replacement races are not fully isolated. Network mounts may cause OS traffic. Arbitrary external tools are not sandboxed. A container or WSL result applies only to that environment. Browser revocation, Windows CTL freshness, running-process caches, PKCS#12/PKCS#7 and effective validation across clients are not established. Python/certifi environments are not executed. Conventional certifi bundles and metadata under `VIRTUAL_ENV`/`CONDA_PREFIX` are read directly; inspect other environments through their lockfiles and explicit CA bundles.
 
-The scanner sends nothing externally by default. It omits source lines, tokens, proxy URLs and private-key contents from reports and redacts usernames and home paths. Reports still include relative filenames, public package names and versions; review them before sharing. Unknown secrets embedded in arbitrary filenames cannot be reliably recognized.
+**Sharing output with online Claude/Codex is separate from scanner networking.** For local-only handling, run the CLI and keep reports off external services. Opaque path hashes permit correlation and are not encryption. Do not have an assistant read raw files into chat to defeat redaction. Actual assistant discovery and real-device policies still require deployment-specific validation.
 
-**Sharing output with online Claude or Codex is separate from the scanner's own networking.** If everything must stay on your machine, run the CLI directly and do not share output with an external service. Do not ask an assistant to paste raw configuration files into the conversation. Audit a stable snapshot of untrusted directories.
+## Remediation and data
 
-## Development and tests
+Update OS trust packages, browsers, runtimes and independent bundles through official channels. Restart processes; rebuild and redeploy virtual environments, CI/container images and applications. Never disable TLS verification or indiscriminately delete related roots. The audit never performs these changes. Scope credential rotation to evidence of actual connections, authentication and interception; neither blanket rotation nor blanket non-rotation follows from this scan.
 
-Run the following in a development virtual environment. On Windows, replace `python3` with `py -3`.
+Indicators and rules stay in `data/` with sources, dates and versions. SHA-256 normalizes CRLF/CR to LF; other byte changes are detected. These are consistency checks, not signatures. Embedded data is updated by reviewed commits and a new binary, never runtime fetches. Much of the fixed-version table is a 2026-10-21 [community-tracker](https://emudhra.we-have-a-problem.com/) snapshot; recheck vendor notices when maintaining it. See [AUDIT.md](AUDIT.md) for migration differences and remaining risks.
+
+## Development, releases and license
 
 ```sh
-python3 -m pip install pytest ruff build
-python3 -m pytest
-python3 -m ruff check .
-python3 -m ruff format --check .
-python3 -B bin/emudhra-trust-audit.py data --verify
-python3 scripts/build_skills.py dist/skills
-python3 -m build
+cargo fmt --all -- --check
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked --all-targets
+cargo run --locked -- data --verify
+cargo run --locked --example maintenance -- skills
 ```
 
-Choose a new, empty output directory if the build destination already exists. Tests cover LF, CRLF and CR data, tampering after newline conversion, and standalone skills outside the checkout. When editing skills, run the `quick_validate.py` helper supplied by `skill-creator` against both skill folders. That optional validation tool is not bundled here.
+CI also runs cargo-deny for advisories, licenses and dependency sources. This adds no product runtime dependency. Release packaging includes the locked dependencies' license texts. The release workflow builds the five targets above, tests their binaries and generates archive `SHA256SUMS`; a `v*` tag publishes a Release, while manual runs only upload Actions artifacts. Do not create a release tag without explicit authorization.
 
-## Data, contribution and license
-
-Indicators, rules and fixed-version policies live in `data/`, with source URLs, dates, versions and SHA-256 digests. Updates are reviewed commits, never runtime downloads. JSON digests normalize CRLF and CR to LF while detecting other byte changes. `.gitattributes` also keeps checkouts at LF. Checksums provide consistency checks, not signatures or proof of source authenticity. Much of the version policy is a 2026-10-21 snapshot from the [community tracker](https://emudhra.we-have-a-problem.com/); maintainers should recheck primary vendor notices when updating it.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and [CHANGELOG.md](CHANGELOG.md). Licensed under Apache-2.0; [LICENSE](LICENSE) and [NOTICE](NOTICE) are included. This project is not affiliated with or endorsed by eMudhra, Anthropic, OpenAI or GitHub. It does not bundle third-party repair scripts or compromised certificates. Test certificates are synthetic fixtures.
-
-## Independent audit (2026-10-22)
-
-[AUDIT.md](AUDIT.md) records the independent review, corrections, validation and remaining risks. Project symlinks are rejected again immediately before reading. Endpoint certificates and keystores use bounded regular-file reads; OS certificate symlinks are followed because legitimate stores use them. Default limits are 1 MiB for project files and normally 16 MiB for endpoint bundles (32 MiB in the certificate-file API).
-
-`--commands` does not isolate processes or guarantee that startup hooks and installed tools will not communicate or write files. For offline operation, use the default mode with a stable local snapshot. Reading network mounts can trigger OS-level traffic. Concurrent replacement of parent directories is not prevented atomically on every OS.
-
-The scanner compares `.nvmrc`, `.node-version`, `.go-version`, `.tool-versions` and simple mise `[tools]` pins. Unparsed manifests are coverage gaps. Comments, conditional settings, test fixtures and complex TOML exceed static pattern matching's guarantees; review findings in context.
-
-## Renaming and compatibility
-
-The product, GitHub repository, distribution and CLI are named `emudhra-trust-audit`. The checkout entrypoint is now `bin/emudhra-trust-audit.py`; update existing caller scripts. For compatibility, the Python module `ca_trust_audit`, data override variable `CA_TRUST_AUDIT_DATA_DIR` and exclusion file `.ca-trust-audit-ignore` are retained. The two skill names are unchanged. Historical audit records and synthetic certificate subjects retain the original name.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [VALIDATION.md](VALIDATION.md) and [CHANGELOG.md](CHANGELOG.md). Licensed under **Apache-2.0**, with [LICENSE](LICENSE), [NOTICE](NOTICE) and packaged third-party notices. Synthetic certificate fixtures contain no private keys. No affiliation with eMudhra, Anthropic, OpenAI or GitHub is implied. The former Python package/module and Python-specific build/test/skill helpers have been removed; old validation remains in Git history.

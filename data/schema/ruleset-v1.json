@@ -7,7 +7,7 @@
   "properties": {
     "schema_version": { "type": "integer", "enum": [1] },
     "ruleset_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-    "data_version": { "type": "string", "pattern": "^[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}$" },
+    "data_version": { "type": "string", "pattern": "^[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}(\\.[0-9]+)?$" },
     "as_of": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
     "description": { "type": "string" },
     "scan": {

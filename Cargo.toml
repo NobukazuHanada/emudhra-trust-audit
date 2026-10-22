@@ -1,0 +1,29 @@
+[package]
+name = "emudhra-trust-audit"
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.99.1"
+license = "Apache-2.0"
+description = "Offline, read-only eMudhra CA trust audits for endpoints and repositories"
+repository = "https://github.com/NobukazuHanada/emudhra-trust-audit"
+default-run = "emudhra-trust-audit"
+
+[dependencies]
+base64 = "0.22"
+glob = "0.3"
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+toml = "0.8"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[profile.release]
+lto = "thin"
+strip = true
+panic = "abort"
+
+[lints.rust]
+unsafe_code = "forbid"

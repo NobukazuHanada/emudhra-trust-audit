@@ -13,8 +13,10 @@ License at
 Third-party material and attribution
 -------------------------------------------------------------------------------
 
-This project does not bundle third-party source code, certificate files,
-archives or scripts. The certificate fixtures under tests/fixtures are synthetic
+The Rust executable links third-party crates listed in Cargo.lock. Release
+archives include THIRD_PARTY_LICENSES with each crate's license texts and metadata.
+This project does not bundle third-party repair scripts or compromised CA
+certificate files. The certificate fixtures under tests/fixtures are synthetic
 project-owned test data, covered by this project's Apache-2.0 license.
 
 The indicator and remediation data under `data/` records *facts* (public key

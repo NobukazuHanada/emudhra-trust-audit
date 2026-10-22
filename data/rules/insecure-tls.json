@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "ruleset_id": "insecure-tls-settings",
-  "data_version": "2026.10.22",
+  "data_version": "2026.10.22.1",
   "as_of": "2026-10-22",
   "description": "Textual rules that locate places where TLS certificate verification is weakened or redirected to a custom trust anchor. A textual match is evidence about configuration, never about an actual interception; the status is reported as 'known_indicator' for unambiguous verification-disabling switches and 'suspicious' for patterns that are frequently, but not always, a real bypass.",
   "scan": {
@@ -396,7 +396,7 @@
     {
       "id": "TLS-PLAINTEXT-REPOSITORY",
       "title": "Package repository referenced over http://",
-      "pattern": "(url|repository|registry|index[-_]url|baseUrl)\\s*[:=]\\s*[\"']?http://(?!localhost|127\\.0\\.0\\.1|\\[::1\\])",
+      "pattern": "(url|repository|registry|index[-_]url|baseUrl)\\s*[:=]\\s*[\"']?http://[^\\s/\"']+",
       "flags": [
         "i"
       ],
@@ -408,7 +408,8 @@
       "remediation": [
         "Switch the repository URL to https://."
       ],
-      "references": []
+      "references": [],
+      "exclude_match": "(?i)http://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:[0-9]+)?$"
     },
     {
       "id": "TLS-SWALLOWED-CERT-ERROR",

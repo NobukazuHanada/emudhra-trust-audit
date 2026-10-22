@@ -1,57 +1,39 @@
 # Agent instructions
 
-This repository contains two read-only audit skills and the scanner they drive.
-Codex reads this file. Claude Code users should use the matching skill;
-the skill bodies are the detailed instructions.
+This repository contains a Rust CLI and two read-only audit skills. Read the
+matching `skills/endpoint-trust-audit/SKILL.md` or
+`skills/project-trust-audit/SKILL.md` before auditing an endpoint or project.
 
-## The two skills
+## Safety invariants
 
-| Skill | Question it answers | Instructions |
-| --- | --- | --- |
-| `endpoint-trust-audit` | Would a client on *this machine* accept a certificate signed with one of the compromised eMudhra intermediate CA keys? | [`skills/endpoint-trust-audit/SKILL.md`](skills/endpoint-trust-audit/SKILL.md) |
-| `project-trust-audit` | Does *this repository* trust such a key, or switch certificate verification off? | [`skills/project-trust-audit/SKILL.md`](skills/project-trust-audit/SKILL.md) |
+- Audits never modify trust stores, dependencies, registry settings or input files.
+- Default operation is file-only and offline. Executable probes require explicit
+  `--commands`; `--no-commands` wins. Network probes additionally require explicit
+  consent and `--network-test HOST`. Do not execute project scripts.
+- `known_indicator`, `suspicious`, `not_found` and `unable_to_assess` are distinct.
+  Missing evidence is never a pass. Presence is not effective trust acceptance.
+- No malware claims, blanket root removal or TLS-verification bypasses.
+- Never output raw source, secrets, command banners or personal filenames. File
+  references are opaque hashes. Custom indicator data is trusted maintainer input.
+- Keep indicators/rules in `data/`, with provenance and normalized checksums.
+  Embedded data makes the release executable independent of external files.
 
-Read the matching SKILL.md before running anything, and follow its "Hard rules"
-section.
+## Development
 
-## Commands
+Use the pinned stable Rust toolchain and committed Cargo.lock. Run:
 
-```bash
-python3 bin/emudhra-trust-audit.py endpoint --format json     # this machine
-python3 bin/emudhra-trust-audit.py project . --format json    # this repository
-python3 bin/emudhra-trust-audit.py explain ENDPOINT-SPKI-TRUSTED
-python3 bin/emudhra-trust-audit.py data                       # indicator provenance
+```sh
+cargo fmt --all -- --check
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked --all-targets
+cargo run --locked -- data --verify
+cargo run --locked --example maintenance -- skills
 ```
 
-On Windows use `py -3 bin\emudhra-trust-audit.py ...`.
+After a reviewed data change, generate checksums without overwriting the input:
+`cargo run --locked -- data --checksums data > new-checksums.json`, inspect it,
+then replace `data/checksums.json`, rebuild and verify. Do not redirect stdout
+straight onto an input file. No Python is used for building, testing or running.
 
-Exit codes: `0` nothing to do, `1` review required, `2` action required, `3`
-audit error. Treat a non-zero exit as information, not as a crash.
-
-## Rules that apply to any agent working here
-
-1. **Read-only by default.** Neither skill may change a trust store, install a
-   package, edit a lock file or write a registry key. Remediation is printed for
-   a human to run.
-2. **File-only by default.** External executable probes require explicit `--commands`.
-   **No network by default.** The endpoint skill connects only with an explicit
-   `--network-test HOST`, after asking the user. Nothing is ever uploaded.
-3. **No guessing.** Distinguish `known_indicator`, `suspicious`, `not_found` and
-   `unable_to_assess`. `unable_to_assess` is not a pass.
-4. **No malware claims.** This incident is a weak CA key, not an infection.
-5. **No secrets in output.** Variable names and redacted paths only.
-6. **Indicators are data.** Everything matched against lives in `data/` with its
-   own sources, `as_of` date and `data_version`. Never hardcode an indicator in
-   Python, and never fetch indicators at runtime.
-
-## Working on the code
-
-```bash
-python3 -m pytest           # tests
-python3 -m ruff check .     # lint
-python3 bin/emudhra-trust-audit.py data --write-checksums   # after editing data/
-```
-
-New checks belong in `data/` when they are indicators or rules, and in
-`src/ca_trust_audit/` when they are logic. Every new finding id needs an entry in
-`src/ca_trust_audit/explanations.py`; a test enforces it.
+Release tags publish archives; manual workflow runs only build downloadable
+Actions artifacts. Never create a tag unless the user explicitly requests it.
