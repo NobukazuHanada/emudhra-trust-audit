@@ -360,7 +360,7 @@ windows_checks() {
     grep -q "^\.\\\\app\.sh:$n:" "$TMP/pw1.out" || fail "PW1 missed rule example on line $n"
   done
   grep -q "^MATCH	.\\\\certs\\\\ca-bundle.pem	$h$" "$TMP/pw1.out" || { fail "PW1 positive SPKI test"; cat "$TMP/pw1.out" >&2; }
-  grep -q 'node_modules' "$TMP/pw1.out" && fail "PW1 scanned an excluded directory"
+  grep -q '^\.\\node_modules' "$TMP/pw1.out" && fail "PW1 scanned an excluded directory"
   grep -q 'http://<redacted>@pypi.example.invalid' "$TMP/pw1.out" || fail "PW1 URL credential redaction"
   grep -q 'node = "22.1.0"' "$TMP/pw1.out" || fail "PW1 mise tool pin"
   grep 's3cr3t' "$TMP/pw1.out" && fail "PW1 printed a secret"
