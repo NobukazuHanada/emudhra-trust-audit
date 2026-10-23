@@ -23,49 +23,67 @@ This is not a malware scanner. **"Not detected" does not mean safe.**
 
 ## Install
 
+There are two plugins, one skill each. Install only the one you need, or
+both; each works on its own.
+
 ### Claude Code
 
 ```sh
-claude plugin install emudhra-trust-audit --marketplace NobukazuHanada/emudhra-trust-audit
+claude plugin install endpoint-trust-audit --marketplace NobukazuHanada/emudhra-trust-audit
+claude plugin install project-trust-audit --marketplace NobukazuHanada/emudhra-trust-audit
 ```
 
-Inside a session, the same works as
-`/plugin install emudhra-trust-audit --marketplace NobukazuHanada/emudhra-trust-audit`.
-On older Claude Code versions use two steps:
+Each line adds this repository as the marketplace `emudhra-trust-audit` if
+needed and installs one plugin. If your Claude Code does not accept
+`--marketplace`, add the marketplace first:
 
 ```sh
 claude plugin marketplace add NobukazuHanada/emudhra-trust-audit
-claude plugin install emudhra-trust-audit@emudhra-trust-audit
+claude plugin install endpoint-trust-audit@emudhra-trust-audit
+claude plugin install project-trust-audit@emudhra-trust-audit
 ```
 
 ### Codex
 
 ```sh
 codex plugin marketplace add NobukazuHanada/emudhra-trust-audit
-codex plugin add emudhra-trust-audit@emudhra-trust-audit
+codex plugin add endpoint-trust-audit@emudhra-trust-audit
+codex plugin add project-trust-audit@emudhra-trust-audit
 ```
 
 ### Without a plugin system
 
-Copy the two folders under `plugins/emudhra-trust-audit/skills/` into your
-personal skills directory: `~/.claude/skills/` for Claude Code or
-`~/.agents/skills/` for Codex. Each folder is self-contained.
+Download this repository (GitHub **Code → Download ZIP**) and copy the skill
+folder you need into your personal skills directory, `~/.claude/skills/` for
+Claude Code or `~/.agents/skills/` for Codex:
+
+- `plugins/endpoint-trust-audit/skills/endpoint-trust-audit/`
+- `plugins/project-trust-audit/skills/project-trust-audit/`
+
+Each folder is self-contained.
+
+### Upgrading from 0.3.0
+
+Version 0.3.0 shipped both skills as one plugin named `emudhra-trust-audit`.
+Remove it before installing the new plugins:
+`claude plugin uninstall emudhra-trust-audit@emudhra-trust-audit` or
+`codex plugin remove emudhra-trust-audit@emudhra-trust-audit`.
 
 ## Update
 
 | Tool | Commands |
 | --- | --- |
-| Claude Code | `claude plugin marketplace update emudhra-trust-audit`, then `claude plugin update emudhra-trust-audit@emudhra-trust-audit` (restart the session) |
-| Codex | `codex plugin marketplace upgrade emudhra-trust-audit`, then `codex plugin add emudhra-trust-audit@emudhra-trust-audit` |
-| Manual copy | Replace the two copied folders |
+| Claude Code | `claude plugin marketplace update emudhra-trust-audit`, then `claude plugin update endpoint-trust-audit@emudhra-trust-audit` and/or `claude plugin update project-trust-audit@emudhra-trust-audit` (restart the session) |
+| Codex | `codex plugin marketplace upgrade emudhra-trust-audit`, then `codex plugin add endpoint-trust-audit@emudhra-trust-audit` and/or `codex plugin add project-trust-audit@emudhra-trust-audit` |
+| Manual copy | Replace the copied folder |
 
 ## Uninstall
 
 | Tool | Commands |
 | --- | --- |
-| Claude Code | `claude plugin uninstall emudhra-trust-audit@emudhra-trust-audit`, then `claude plugin marketplace remove emudhra-trust-audit` |
-| Codex | `codex plugin remove emudhra-trust-audit@emudhra-trust-audit`, then `codex plugin marketplace remove emudhra-trust-audit` |
-| Manual copy | Delete the two copied folders |
+| Claude Code | `claude plugin uninstall endpoint-trust-audit@emudhra-trust-audit` and/or `claude plugin uninstall project-trust-audit@emudhra-trust-audit`, then `claude plugin marketplace remove emudhra-trust-audit` |
+| Codex | `codex plugin remove endpoint-trust-audit@emudhra-trust-audit` and/or `codex plugin remove project-trust-audit@emudhra-trust-audit`, then `codex plugin marketplace remove emudhra-trust-audit` |
+| Manual copy | Delete the copied folder |
 
 ## Use
 
@@ -74,8 +92,9 @@ compromised eMudhra CA keys?" or "Audit this repository for the eMudhra CA
 incident."
 
 - Claude Code: the skills load automatically when relevant, or call them
-  directly with `/emudhra-trust-audit:endpoint-trust-audit` and
-  `/emudhra-trust-audit:project-trust-audit`.
+  directly with `/endpoint-trust-audit:endpoint-trust-audit` and
+  `/project-trust-audit:project-trust-audit` (`/endpoint-trust-audit` and
+  `/project-trust-audit` after a manual copy).
 - Codex: the skills load automatically when relevant; you can also name
   `endpoint-trust-audit` or `project-trust-audit` in the request.
 
@@ -98,8 +117,9 @@ The skills forbid installing, changing, deleting, elevating (`sudo`, run as
 administrator), executing project code, running programs outside the OS
 (such as `node` or `python`) and network access. Commands do not embed
 untrusted values: file contents are passed on standard input and file names
-only through `find`. Each block runs once with a 120-second timeout and
-prints bounded summaries. These are instructions to the agent, not a sandbox:
+only through `find`. On Windows, CA files named by environment variables are
+opened only on local drives, so the audit never contacts a file server. Each
+block runs once with a 120-second timeout and prints bounded summaries. These are instructions to the agent, not a sandbox:
 your agent's own permission prompts remain the enforcement point.
 
 ## Privacy
@@ -107,9 +127,10 @@ your agent's own permission prompts remain the enforcement point.
 The skills send nothing anywhere themselves. The agent does read command
 output, and that output is processed by the AI service you use (Anthropic or
 OpenAI) under its terms. To keep that small, the commands print only labels,
-counts, hashes, versions and matched setting fragments, never whole files or
-configuration lines. The report rules mask home paths, user names, secrets
-and certificate subjects. See [PRIVACY.md](PRIVACY.md).
+counts, hashes, versions, matched setting fragments and, for lockfiles, the
+few truncated lines that hold a version, never whole files. Credentials in
+URLs are replaced with `<redacted>` before output. The report rules mask home
+paths, user names, secrets and certificate subjects. See [PRIVACY.md](PRIVACY.md).
 
 ## Results
 
@@ -155,8 +176,10 @@ community tracker; see [NOTICE](NOTICE).
   (`.agents/plugins/marketplace.json`). The install commands above use it.
 - It has **not** been submitted to the Anthropic plugin directory or the
   OpenAI plugin directory. Both require submission and review by the
-  respective company, and acceptance is not guaranteed. The name contains a
-  third-party brand, which both directories review.
+  respective company, and acceptance is not guaranteed. The plugin names do
+  not contain a third-party brand, but descriptions and the marketplace name
+  mention eMudhra to identify the incident; both directories review brand
+  use.
 
 ## Rust CLI (archived)
 
@@ -170,10 +193,11 @@ maintained on `main`, and no binary release was published.
 ```text
 .claude-plugin/marketplace.json      Claude Code marketplace
 .agents/plugins/marketplace.json     Codex marketplace
-plugins/emudhra-trust-audit/         the plugin
+plugins/endpoint-trust-audit/        plugin 1 (same layout for plugin 2)
   .claude-plugin/plugin.json         Claude Code manifest
   .codex-plugin/plugin.json          Codex manifest
   skills/endpoint-trust-audit/       SKILL.md + references/
+plugins/project-trust-audit/         plugin 2
   skills/project-trust-audit/        SKILL.md + references/
 scripts/validate.sh                  CI checks (maintainers only)
 ```

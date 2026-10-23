@@ -1,0 +1,31 @@
+{
+  "name": "endpoint-trust-audit",
+  "version": "0.4.0",
+  "description": "Unofficial, read-only skill for the 2026 eMudhra weak intermediate CA key incident: checks this computer's CA bundles, trust stores, keychains and TLS settings using only OS-standard commands.",
+  "author": {
+    "name": "Nobukazu Hanada",
+    "url": "https://github.com/NobukazuHanada"
+  },
+  "homepage": "https://github.com/NobukazuHanada/emudhra-trust-audit",
+  "repository": "https://github.com/NobukazuHanada/emudhra-trust-audit",
+  "license": "Apache-2.0",
+  "keywords": ["security", "tls", "certificates", "ca", "audit", "endpoint", "emudhra"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Endpoint Trust Audit",
+    "shortDescription": "Check PC trust of eMudhra keys",
+    "longDescription": "Unofficial community skill, not affiliated with eMudhra. Read-only check of this computer's CA bundles, OS trust stores, keychains and CA override files against the compromised eMudhra intermediate SPKI hashes, plus CA package versions and TLS-disabling settings, using only OS-standard commands. Reports evidence, confidence and coverage gaps; never changes anything or sends data.",
+    "developerName": "Nobukazu Hanada",
+    "category": "Security",
+    "capabilities": [],
+    "websiteURL": "https://github.com/NobukazuHanada/emudhra-trust-audit",
+    "privacyPolicyURL": "https://github.com/NobukazuHanada/emudhra-trust-audit/blob/main/PRIVACY.md",
+    "defaultPrompt": [
+      "Check whether this computer still trusts the compromised eMudhra intermediate CA keys",
+      "Look for TLS verification being disabled on this machine"
+    ],
+    "brandColor": "#1F6FEB",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg"
+  }
+}

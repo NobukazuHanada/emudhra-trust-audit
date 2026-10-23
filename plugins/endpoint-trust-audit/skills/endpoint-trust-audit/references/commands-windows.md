@@ -36,11 +36,17 @@ function Get-P384SpkiSha256($c) {
   $der = [byte[]](0x30, 0x76, 0x30, 0x10, 0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01) + $p + [byte[]](0x03, 0x62, 0x00) + $k
   ([BitConverter]::ToString($sha.ComputeHash([byte[]]$der))).Replace('-', '')
 }
+function Test-LocalFile($path) {
+  if ($path -notmatch '^[A-Za-z]:\\') { return $false }
+  try { $t = [string]((New-Object System.IO.DriveInfo ($path.Substring(0, 1))).DriveType) } catch { return $false }
+  if ($t -ne 'Fixed' -and $t -ne 'Removable') { return $false }
+  Test-Path -LiteralPath $path -PathType Leaf
+}
 function Read-PemCertificates($path) {
-  $i = Get-Item -LiteralPath $path -Force
+  try { $i = Get-Item -LiteralPath $path -Force } catch { 'SKIPPED'; return }
   if ($i.Attributes -band [IO.FileAttributes]::ReparsePoint) { 'SKIPPED'; return }
   if ($i.Length -gt 16MB) { 'SKIPPED'; return }
-  $t = [IO.File]::ReadAllText($i.FullName)
+  try { $t = [IO.File]::ReadAllText($i.FullName) } catch { 'SKIPPED'; return }
   foreach ($b in [regex]::Matches($t, '-----BEGIN CERTIFICATE-----([A-Za-z0-9+/=\s]+?)-----END CERTIFICATE-----')) {
     try { New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 (, [Convert]::FromBase64String(($b.Groups[1].Value -replace '\s', ''))) } catch { 'UNPARSED' }
   }
@@ -76,13 +82,15 @@ foreach ($v in @('SSL_CERT_FILE', 'SSL_CERT_DIR', 'CURL_CA_BUNDLE', 'REQUESTS_CA
   $val = [Environment]::GetEnvironmentVariable($v)
   if (-not $val) { continue }
   "ENV`t$v`tset"
-  if ($v -ne 'SSL_CERT_DIR' -and $v -ne 'JAVA_HOME' -and $v -ne 'VIRTUAL_ENV' -and $v -ne 'CONDA_PREFIX' -and (Test-Path -LiteralPath $val -PathType Leaf)) { Test-Certificates ('env:' + $v) @(Read-PemCertificates $val) }
+  if ($v -eq 'SSL_CERT_DIR' -or $v -eq 'JAVA_HOME' -or $v -eq 'VIRTUAL_ENV' -or $v -eq 'CONDA_PREFIX') { continue }
+  if (Test-LocalFile $val) { Test-Certificates ('env:' + $v) @(Read-PemCertificates $val) } else { "NOT_LOCAL_FILE`tenv:$v" }
 }
 foreach ($v in @('VIRTUAL_ENV', 'CONDA_PREFIX')) {
   $val = [Environment]::GetEnvironmentVariable($v)
   if (-not $val) { continue }
+  if ($val -notmatch '^[A-Za-z]:\\') { "NOT_LOCAL_FILE`tpython:$v"; continue }
   $f = Join-Path $val 'Lib\site-packages\certifi\cacert.pem'
-  if (Test-Path -LiteralPath $f -PathType Leaf) { Test-Certificates ('python:' + $v) @(Read-PemCertificates $f) }
+  if (Test-LocalFile $f) { Test-Certificates ('python:' + $v) @(Read-PemCertificates $f) }
 }
 $cfg = '(?i)sslverify\s*=\s*(false|0|no)|strict[-_]ssl\s*[=:]\s*"?false|^\s*(--)?insecure(\s|$)|^\s*-k(\s|$)|check[-_]certificate\s*=\s*off|enableStrictSsl\s*:\s*false|trusted[-_]host|ssl[-_]?cainfo\s*=|cafile\s*[=:]|^\s*cert\s*='
 $files = @()
@@ -91,7 +99,7 @@ if ($env:APPDATA) { $files += , @('%APPDATA%\pip\pip.ini', (Join-Path $env:APPDA
 if ($env:ProgramData) { $files += , @('%ProgramData%\pip\pip.ini', (Join-Path $env:ProgramData 'pip\pip.ini')); $files += , @('%ProgramData%\Git\config', (Join-Path $env:ProgramData 'Git\config')) }
 if ($env:ProgramFiles) { $files += , @('%ProgramFiles%\Git\etc\gitconfig', (Join-Path $env:ProgramFiles 'Git\etc\gitconfig')) }
 foreach ($pair in $files) {
-  if (-not (Test-Path -LiteralPath $pair[1] -PathType Leaf)) { continue }
+  if (-not (Test-LocalFile $pair[1])) { continue }
   "CONFIG`t$($pair[0])"
   try { Select-String -LiteralPath $pair[1] -Pattern $cfg -AllMatches | Select-Object -First 20 | ForEach-Object { "  line=$($_.LineNumber)`t$($_.Matches[0].Value)" } } catch { "  UNREADABLE" }
 }
@@ -121,6 +129,7 @@ Reading the output:
 | `MATCH store:…Disallowed` | Mitigation evidence (explicitly distrusted). Not an indicator |
 | `NAME_ONLY …` | Subject resembles an affected CA but the SPKI did not match or could not be computed: `suspicious`, confidence low |
 | `UNAVAILABLE …`, `unreadable=` > 0 | `unable_to_assess` for that source |
+| `NOT_LOCAL_FILE env:…` or `python:…` | The variable names a network (UNC or mapped) path, a relative path or a missing file. It was deliberately not opened, so that the audit never contacts a file server: `unable_to_assess` for that bundle |
 | `ENV … 0/1/true` for the three TLS flags | See the endpoint config table in `commands-posix.md` E4; the same classification applies |
 | `CONFIG` with `line=` entries | Same classification as E4 |
 | `POLICY DisableRootAutoUpdate=1` | `suspicious`, medium: Windows will not receive Microsoft root and disallowed-list updates automatically |

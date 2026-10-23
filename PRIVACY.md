@@ -25,8 +25,9 @@ The command output and the report are part of your conversation with the
 agent, so they are processed by the AI service you use (Anthropic for Claude
 Code, OpenAI for Codex) under that service's terms and privacy policy. The
 skills keep this small: commands print only labels, counts, SPKI hashes,
-versions and matched setting fragments, not whole files or configuration
-lines. Reports mask home paths, user names, secret values and certificate
+versions, matched setting fragments and, for lockfiles, the few truncated
+lines that hold a version, never whole files. Credentials in URLs are
+replaced with `<redacted>` before output. Reports mask home paths, user names, secret values and certificate
 subjects. Masking is done by the agent following instructions, so review
 output before sharing a report further.
 

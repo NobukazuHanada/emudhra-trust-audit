@@ -1,15 +1,22 @@
 {
   "name": "emudhra-trust-audit",
-  "description": "Unofficial community marketplace for the read-only emudhra-trust-audit skills.",
+  "description": "Unofficial community marketplace for two read-only skills that audit exposure to the 2026 eMudhra weak intermediate CA key incident.",
   "owner": {
     "name": "Nobukazu Hanada",
     "url": "https://github.com/NobukazuHanada"
   },
   "plugins": [
     {
-      "name": "emudhra-trust-audit",
-      "source": "./plugins/emudhra-trust-audit",
-      "description": "Unofficial, read-only audit skills for the 2026 eMudhra weak intermediate CA key incident (endpoint and project).",
+      "name": "endpoint-trust-audit",
+      "source": "./plugins/endpoint-trust-audit",
+      "description": "Unofficial, read-only check of this computer's CA bundles, trust stores, keychains and TLS settings for the 2026 eMudhra weak intermediate CA keys.",
+      "category": "security",
+      "homepage": "https://github.com/NobukazuHanada/emudhra-trust-audit"
+    },
+    {
+      "name": "project-trust-audit",
+      "source": "./plugins/project-trust-audit",
+      "description": "Unofficial, read-only check of a repository's CA bundles, TLS-bypass settings and dependency versions for the 2026 eMudhra weak intermediate CA keys.",
       "category": "security",
       "homepage": "https://github.com/NobukazuHanada/emudhra-trust-audit"
     }

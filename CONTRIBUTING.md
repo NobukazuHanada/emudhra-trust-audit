@@ -1,7 +1,9 @@
 # Contributing
 
-The product is two skills under `plugins/emudhra-trust-audit/skills/`. They
-must stay pure: Markdown instructions and data only, no scripts, binaries or
+The product is two plugins with one skill each:
+`plugins/endpoint-trust-audit/skills/endpoint-trust-audit/` and
+`plugins/project-trust-audit/skills/project-trust-audit/`. They must stay
+pure: Markdown instructions and data only, no scripts, binaries or
 runtime requirements for users. Keep changes narrow and preserve the safety
 rules in each `SKILL.md`.
 
@@ -15,6 +17,8 @@ rules in each `SKILL.md`.
   `unable_to_assess`, never approximated.
 - Keep `SKILL.md` under 500 lines and its `description` under 1,024
   characters; `name` must equal the folder name.
+- Keep both plugins at the same `version` in all four manifests, and list
+  them in the same order in both marketplace files.
 - Never use symbolic links. Shared files are copied: `indicators.md`,
   `fixed-versions.md` and `report-template.md` must be byte-identical in both
   skills, and CI checks this.
@@ -42,11 +46,13 @@ copies, indicator consistency, forbidden commands in catalogue blocks, file
 types and sizes, README parity, and runs the POSIX catalogue blocks against
 synthetic fixtures. On Windows, CI also runs the PowerShell blocks.
 
-If you have Claude Code, `claude plugin validate --strict ./plugins/emudhra-trust-audit`
-and `claude plugin validate --strict .` validate the manifests.
+If you have Claude Code, `claude plugin validate --strict .`,
+`claude plugin validate --strict ./plugins/endpoint-trust-audit` and
+`claude plugin validate --strict ./plugins/project-trust-audit` validate the
+manifests.
 
 ## Documentation
 
 `README.md` (English) and `README.ja.md` (Japanese) must keep the same
-sections and facts. Update `CHANGELOG.md` and bump the plugin `version` in
-both manifests for user-visible changes.
+sections and facts. Update `CHANGELOG.md` and bump the `version` in all four
+plugin manifests for user-visible changes.

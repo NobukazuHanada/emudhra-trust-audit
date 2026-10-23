@@ -1,0 +1,31 @@
+{
+  "name": "project-trust-audit",
+  "version": "0.4.0",
+  "description": "Unofficial, read-only skill for the 2026 eMudhra weak intermediate CA key incident: checks a repository's CA bundles, TLS-bypass settings and dependency versions without running project code.",
+  "author": {
+    "name": "Nobukazu Hanada",
+    "url": "https://github.com/NobukazuHanada"
+  },
+  "homepage": "https://github.com/NobukazuHanada/emudhra-trust-audit",
+  "repository": "https://github.com/NobukazuHanada/emudhra-trust-audit",
+  "license": "Apache-2.0",
+  "keywords": ["security", "tls", "certificates", "ca", "audit", "dependencies", "emudhra"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Project Trust Audit",
+    "shortDescription": "Audit repo for eMudhra CA keys",
+    "longDescription": "Unofficial community skill, not affiliated with eMudhra. Read-only check of a repository's vendored CA bundles against the compromised eMudhra intermediate SPKI hashes, plus TLS-verification bypasses, custom CA overrides and lockfile versions, using only OS-standard commands and never running project code. Reports evidence, confidence and coverage gaps; never changes anything or sends data.",
+    "developerName": "Nobukazu Hanada",
+    "category": "Security",
+    "capabilities": [],
+    "websiteURL": "https://github.com/NobukazuHanada/emudhra-trust-audit",
+    "privacyPolicyURL": "https://github.com/NobukazuHanada/emudhra-trust-audit/blob/main/PRIVACY.md",
+    "defaultPrompt": [
+      "Audit this repository for the eMudhra CA incident and TLS verification bypasses",
+      "Find code or config in this repository that disables TLS certificate verification"
+    ],
+    "brandColor": "#1F6FEB",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg"
+  }
+}

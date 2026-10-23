@@ -16,52 +16,68 @@
 
 ## 導入
 
+プラグインは2つあり、それぞれにスキルが1つ入っています。必要な方だけでも、両方でも導入でき、どちらも単独で動きます。
+
 ### Claude Code
 
 ```sh
-claude plugin install emudhra-trust-audit --marketplace NobukazuHanada/emudhra-trust-audit
+claude plugin install endpoint-trust-audit --marketplace NobukazuHanada/emudhra-trust-audit
+claude plugin install project-trust-audit --marketplace NobukazuHanada/emudhra-trust-audit
 ```
 
-セッション内では `/plugin install emudhra-trust-audit --marketplace NobukazuHanada/emudhra-trust-audit` でも同じです。
-古い Claude Code では次の2段階で導入します。
+各行は、必要ならこのリポジトリをマーケットプレイス `emudhra-trust-audit` として追加し、プラグインを1つ導入します。
+お使いの Claude Code が `--marketplace` を受け付けない場合は、先にマーケットプレイスを追加します。
 
 ```sh
 claude plugin marketplace add NobukazuHanada/emudhra-trust-audit
-claude plugin install emudhra-trust-audit@emudhra-trust-audit
+claude plugin install endpoint-trust-audit@emudhra-trust-audit
+claude plugin install project-trust-audit@emudhra-trust-audit
 ```
 
 ### Codex
 
 ```sh
 codex plugin marketplace add NobukazuHanada/emudhra-trust-audit
-codex plugin add emudhra-trust-audit@emudhra-trust-audit
+codex plugin add endpoint-trust-audit@emudhra-trust-audit
+codex plugin add project-trust-audit@emudhra-trust-audit
 ```
 
 ### プラグイン機能を使わない場合
 
-`plugins/emudhra-trust-audit/skills/` の下にある2つのフォルダを、個人用スキルのディレクトリへコピーします。Claude Code は `~/.claude/skills/`、Codex は `~/.agents/skills/` です。各フォルダは単体で動きます。
+このリポジトリをダウンロードし（GitHub の **Code → Download ZIP**）、必要なスキルのフォルダを個人用スキルのディレクトリへコピーします。Claude Code は `~/.claude/skills/`、Codex は `~/.agents/skills/` です。
+
+- `plugins/endpoint-trust-audit/skills/endpoint-trust-audit/`
+- `plugins/project-trust-audit/skills/project-trust-audit/`
+
+各フォルダは単体で動きます。
+
+### 0.3.0 からの移行
+
+0.3.0 では2つのスキルを `emudhra-trust-audit` という1つのプラグインで配布していました。新しいプラグインを導入する前に削除してください：
+`claude plugin uninstall emudhra-trust-audit@emudhra-trust-audit` または
+`codex plugin remove emudhra-trust-audit@emudhra-trust-audit`。
 
 ## 更新
 
 | ツール | コマンド |
 | --- | --- |
-| Claude Code | `claude plugin marketplace update emudhra-trust-audit` の後に `claude plugin update emudhra-trust-audit@emudhra-trust-audit`（セッションを再起動） |
-| Codex | `codex plugin marketplace upgrade emudhra-trust-audit` の後に `codex plugin add emudhra-trust-audit@emudhra-trust-audit` |
-| 手動コピー | コピーした2つのフォルダを置き換える |
+| Claude Code | `claude plugin marketplace update emudhra-trust-audit` の後に、`claude plugin update endpoint-trust-audit@emudhra-trust-audit` と `claude plugin update project-trust-audit@emudhra-trust-audit` のうち導入済みのもの（セッションを再起動） |
+| Codex | `codex plugin marketplace upgrade emudhra-trust-audit` の後に、`codex plugin add endpoint-trust-audit@emudhra-trust-audit` と `codex plugin add project-trust-audit@emudhra-trust-audit` のうち導入済みのもの |
+| 手動コピー | コピーしたフォルダを置き換える |
 
 ## 削除
 
 | ツール | コマンド |
 | --- | --- |
-| Claude Code | `claude plugin uninstall emudhra-trust-audit@emudhra-trust-audit` の後に `claude plugin marketplace remove emudhra-trust-audit` |
-| Codex | `codex plugin remove emudhra-trust-audit@emudhra-trust-audit` の後に `codex plugin marketplace remove emudhra-trust-audit` |
-| 手動コピー | コピーした2つのフォルダを削除する |
+| Claude Code | `claude plugin uninstall endpoint-trust-audit@emudhra-trust-audit` と `claude plugin uninstall project-trust-audit@emudhra-trust-audit` のうち導入済みのものの後に、`claude plugin marketplace remove emudhra-trust-audit` |
+| Codex | `codex plugin remove endpoint-trust-audit@emudhra-trust-audit` と `codex plugin remove project-trust-audit@emudhra-trust-audit` のうち導入済みのものの後に、`codex plugin marketplace remove emudhra-trust-audit` |
+| 手動コピー | コピーしたフォルダを削除する |
 
 ## 使い方
 
 普通の言葉で頼んでください。例：「このコンピューターは侵害された eMudhra の CA 鍵をまだ信頼していますか？」「このリポジトリを eMudhra CA インシデントの観点で監査して」。
 
-- Claude Code：関係する質問ではスキルが自動で読み込まれます。`/emudhra-trust-audit:endpoint-trust-audit` と `/emudhra-trust-audit:project-trust-audit` で直接呼ぶこともできます。
+- Claude Code：関係する質問ではスキルが自動で読み込まれます。`/endpoint-trust-audit:endpoint-trust-audit` と `/project-trust-audit:project-trust-audit` で直接呼ぶこともできます（手動コピーの場合は `/endpoint-trust-audit` と `/project-trust-audit`）。
 - Codex：関係する質問ではスキルが自動で読み込まれます。依頼文で `endpoint-trust-audit` や `project-trust-audit` を名指しすることもできます。
 
 プロジェクトを監査するときは、リポジトリのルートでエージェントを起動してください。Claude Code と Codex は、権限設定に応じてコマンド実行前に承認を求めます。各コマンドを確認してください。
@@ -75,13 +91,14 @@ codex plugin add emudhra-trust-audit@emudhra-trust-audit
 
 スキルは次のことを禁止しています：インストール、変更、削除、権限昇格（`sudo` や管理者として実行）、プロジェクトのコードの実行、OS 以外のプログラム（`node` や `python` など）の実行、ネットワークアクセス。
 コマンドに信頼できない値を埋め込むこともしません。ファイルの中身は標準入力で渡し、ファイル名は `find` 経由でのみ渡します。
+Windows では、環境変数が指す CA ファイルをローカルドライブ上のものに限って開くため、監査がファイルサーバーへ接続することはありません。
 各ブロックは1回だけ、120秒のタイムアウト付きで実行し、量を制限した要約だけを出力します。
 これらはエージェントへの指示であって、サンドボックスではありません。実際に止める役目は、お使いのエージェント自身の権限確認です。
 
 ## プライバシー
 
 スキル自体は何も外部へ送信しません。ただしエージェントはコマンドの出力を読み、その出力は利用中の AI サービス（Anthropic または OpenAI）がそれぞれの規約に従って処理します。
-送られる量を減らすため、コマンドが出力するのはラベル、件数、ハッシュ、バージョン、一致した設定の断片だけです。ファイル全体や設定行は出力しません。
+送られる量を減らすため、コマンドが出力するのはラベル、件数、ハッシュ、バージョン、一致した設定の断片と、ロックファイルについてはバージョンを含む数行（切り詰め済み）だけです。ファイル全体は出力しません。URL に含まれる認証情報は、出力前に `<redacted>` へ置き換えます。
 報告のルールでは、ホームのパス、ユーザー名、秘密情報、証明書のサブジェクトを伏せます。詳しくは [PRIVACY.md](PRIVACY.md) を参照してください。
 
 ## 判定
@@ -115,7 +132,7 @@ codex plugin add emudhra-trust-audit@emudhra-trust-audit
 ## マーケット公開の状況
 
 - このリポジトリ自体が、Claude Code（`.claude-plugin/marketplace.json`）と Codex（`.agents/plugins/marketplace.json`）向けのプラグインマーケットプレイスになっています。上の導入コマンドはこれを使います。
-- Anthropic のプラグインディレクトリにも OpenAI のプラグインディレクトリにも、まだ申請して**いません**。どちらも各社への申請と審査が必要で、掲載される保証はありません。名前に第三者のブランドが含まれており、この点も両ディレクトリの審査対象です。
+- Anthropic のプラグインディレクトリにも OpenAI のプラグインディレクトリにも、まだ申請して**いません**。どちらも各社への申請と審査が必要で、掲載される保証はありません。プラグイン名には第三者のブランドを含めていませんが、インシデントを示すために説明文とマーケットプレイス名で eMudhra に言及しています。ブランドの使い方は両ディレクトリの審査対象です。
 
 ## Rust CLI（保存済み）
 
@@ -126,10 +143,11 @@ codex plugin add emudhra-trust-audit@emudhra-trust-audit
 ```text
 .claude-plugin/marketplace.json      Claude Code 用マーケットプレイス
 .agents/plugins/marketplace.json     Codex 用マーケットプレイス
-plugins/emudhra-trust-audit/         プラグイン本体
+plugins/endpoint-trust-audit/        プラグイン1（プラグイン2も同じ構成）
   .claude-plugin/plugin.json         Claude Code 用 manifest
   .codex-plugin/plugin.json          Codex 用 manifest
   skills/endpoint-trust-audit/       SKILL.md と references/
+plugins/project-trust-audit/         プラグイン2
   skills/project-trust-audit/        SKILL.md と references/
 scripts/validate.sh                  CI 用チェック（メンテナー専用）
 ```

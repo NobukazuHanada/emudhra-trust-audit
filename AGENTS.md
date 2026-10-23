@@ -1,9 +1,9 @@
 # Agent instructions
 
-This repository contains two read-only audit skills packaged as one plugin.
-To audit an endpoint or a project, read and follow
-`plugins/emudhra-trust-audit/skills/endpoint-trust-audit/SKILL.md` or
-`plugins/emudhra-trust-audit/skills/project-trust-audit/SKILL.md`.
+This repository contains two read-only audit skills, each packaged as its own
+plugin. To audit an endpoint or a project, read and follow
+`plugins/endpoint-trust-audit/skills/endpoint-trust-audit/SKILL.md` or
+`plugins/project-trust-audit/skills/project-trust-audit/SKILL.md`.
 
 ## When editing this repository
 

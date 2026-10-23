@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.4.0 — Two independent plugins (2026-10-23)
+
+- Split the single `emudhra-trust-audit` plugin into two plugins,
+  `endpoint-trust-audit` and `project-trust-audit`, one skill each, so either
+  can be installed, updated and removed on its own in Claude Code and Codex.
+  The marketplace name stays `emudhra-trust-audit`. Users of 0.3.0 should
+  uninstall `emudhra-trust-audit@emudhra-trust-audit` first. Skill names and
+  content are unchanged except as listed below.
+- Windows endpoint block: CA files named by environment variables
+  (`SSL_CERT_FILE`, `VIRTUAL_ENV`, …) and per-user configuration files are
+  opened only on local fixed or removable drives. UNC and mapped network
+  paths are reported as `NOT_LOCAL_FILE` (`unable_to_assess`) instead of
+  being opened, so the audit cannot trigger a file-server connection. An
+  unreadable file no longer stops the whole block.
+- Project blocks: URL credentials (`://user:token@`) are replaced with
+  `://<redacted>@` before output; `package.json`, tool pins and container
+  lines print only the matched fragment, and tool pins match only Node/Go
+  entries, so unrelated values in files such as `mise.toml` are not printed.
+  POSIX `grep` uses `-D skip` so a FIFO planted in a repository cannot block
+  the scan.
+- CI adds regression tests for the redaction, FIFO and UNC cases.
+
 ## 0.3.0 — Skills-only plugin (2026-10-23)
 
 - Rebuild the project as two self-contained agent skills,

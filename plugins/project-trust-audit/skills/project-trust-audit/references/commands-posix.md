@@ -38,7 +38,7 @@ Two passes, case-sensitive and case-insensitive, implement every rule in
 <!-- tls-grep: begin -->
 ```sh
 PATH=/usr/bin:/bin:/usr/sbin:/sbin; LC_ALL=C; export PATH LC_ALL
-X='--exclude-dir=.git --exclude-dir=.hg --exclude-dir=.svn --exclude-dir=node_modules --exclude-dir=bower_components --exclude-dir=vendor --exclude-dir=target --exclude-dir=dist --exclude-dir=build --exclude-dir=out --exclude-dir=.venv --exclude-dir=venv --exclude-dir=.tox --exclude-dir=.mypy_cache --exclude-dir=.pytest_cache --exclude-dir=.ruff_cache --exclude-dir=__pycache__ --exclude-dir=.gradle --exclude-dir=.idea --exclude-dir=.next --exclude-dir=.nuxt --exclude-dir=coverage --exclude-dir=.terraform'
+X='-D skip --exclude-dir=.git --exclude-dir=.hg --exclude-dir=.svn --exclude-dir=node_modules --exclude-dir=bower_components --exclude-dir=vendor --exclude-dir=target --exclude-dir=dist --exclude-dir=build --exclude-dir=out --exclude-dir=.venv --exclude-dir=venv --exclude-dir=.tox --exclude-dir=.mypy_cache --exclude-dir=.pytest_cache --exclude-dir=.ruff_cache --exclude-dir=__pycache__ --exclude-dir=.gradle --exclude-dir=.idea --exclude-dir=.next --exclude-dir=.nuxt --exclude-dir=coverage --exclude-dir=.terraform'
 {
   printf 'PASS\tcase-sensitive\n'
   grep -r -n -o -I -E $X \
@@ -65,12 +65,14 @@ X='--exclude-dir=.git --exclude-dir=.hg --exclude-dir=.svn --exclude-dir=node_mo
     -e 'disable[-_]tls["'\'']?[[:space:]]*[:=][[:space:]]*true' \
     -e '(url|repository|registry|index[-_]url|baseUrl)[[:space:]]*[:=][[:space:]]*["'\'']?http://[^[:space:]/"'\'']+' \
     . 2>/dev/null
-} | awk 'length($0) > 300 { $0 = substr($0, 1, 300) "…" } NR <= 400 { print } END { print "TOTAL\t" NR + 0 }'
+} | awk '{ gsub(/:\/\/[^\/@ \t"]*@/, "://<redacted>@") } length($0) > 300 { $0 = substr($0, 1, 300) "…" } NR <= 400 { print } END { print "TOTAL\t" NR + 0 }'
 ```
 <!-- tls-grep: end -->
 
 `$X` is a constant option list and is intentionally unquoted so it splits
-into separate options. Map each fragment to its rule in `tls-rules.md`.
+into separate options. `-D skip` keeps `grep` from blocking on FIFOs or
+devices planted in the repository. Credentials in URLs (`://user:token@`) are
+replaced with `://<redacted>@` before anything is printed. Map each fragment to its rule in `tls-rules.md`.
 Apply the documentation/test downgrade and the localhost exclusion described
 there. `TOTAL` above 400 means truncation: report the remaining matches as
 `unable_to_assess` rather than guessing.
@@ -134,7 +136,7 @@ containers.
 
 ```sh
 PATH=/usr/bin:/bin:/usr/sbin:/sbin; LC_ALL=C; export PATH LC_ALL
-X='--exclude-dir=.git --exclude-dir=node_modules --exclude-dir=vendor --exclude-dir=target --exclude-dir=dist --exclude-dir=build --exclude-dir=.venv --exclude-dir=venv --exclude-dir=__pycache__'
+X='-D skip --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=vendor --exclude-dir=target --exclude-dir=dist --exclude-dir=build --exclude-dir=.venv --exclude-dir=venv --exclude-dir=__pycache__'
 {
   printf 'SECTION\ttoml-locks\n'
   grep -r -n -I -A 1 -E $X --include=Cargo.lock --include=uv.lock --include=poetry.lock --include=pdm.lock -e '^name = "(rustls-webpki|webpki-roots|certifi|pip|uv)"$' . 2>/dev/null
@@ -147,16 +149,16 @@ X='--exclude-dir=.git --exclude-dir=node_modules --exclude-dir=vendor --exclude-
   printf 'SECTION\tyarn-pnpm-bun\n'
   grep -r -n -I -A 2 -E $X --include=yarn.lock --include=pnpm-lock.yaml --include=bun.lock -e '(^|[[:space:]/"'\''])(@anthropic-ai/claude-code|@openai/codex|electron)@' . 2>/dev/null
   printf 'SECTION\tpackage-json\n'
-  grep -r -n -I -E $X --include=package.json -e '"(@anthropic-ai/claude-code|@openai/codex|electron|node)"[[:space:]]*:[[:space:]]*"[^"]*"' . 2>/dev/null
+  grep -r -n -o -I -E $X --include=package.json -e '"(@anthropic-ai/claude-code|@openai/codex|electron|node)"[[:space:]]*:[[:space:]]*"[^"]*"' . 2>/dev/null
   printf 'SECTION\tcomposer-hex-cpan\n'
   grep -r -n -I -A 1 -E $X --include=composer.lock --include=mix.lock --include=cpanfile --include=Makefile.PL -e '"name": "composer/ca-bundle"|"castore"|Mozilla::CA' . 2>/dev/null
   printf 'SECTION\tgo\n'
   grep -r -n -I -E $X --include=go.mod --include=go.work -e '^(go|toolchain)[[:space:]]' . 2>/dev/null
   printf 'SECTION\ttool-pins\n'
-  grep -r -n -I -E $X --include=.nvmrc --include=.node-version --include=.go-version --include=.tool-versions --include=mise.toml --include=.mise.toml -e '[0-9]' . 2>/dev/null
+  grep -r -n -I -E $X --include=.nvmrc --include=.node-version --include=.go-version --include=.tool-versions --include=mise.toml --include=.mise.toml -e '^[[:space:]]*"?(node|nodejs|go|golang)"?[[:space:]]*[ =]' -e '^[[:space:]]*v?[0-9][0-9.]*[[:space:]]*$' . 2>/dev/null
   printf 'SECTION\tcontainers\n'
-  grep -r -n -I -i -E $X --include=Dockerfile --include='Dockerfile.*' --include='*.Dockerfile' --include=Containerfile -e '^[[:space:]]*FROM[[:space:]]' -e 'update-ca-certificates|update-ca-trust|ca-certificates' . 2>/dev/null
-} | awk 'length($0) > 300 { $0 = substr($0, 1, 300) "…" } NR <= 600 { print } END { print "TOTAL\t" NR + 0 }'
+  grep -r -n -o -I -i -E $X --include=Dockerfile --include='Dockerfile.*' --include='*.Dockerfile' --include=Containerfile -e '^[[:space:]]*FROM[[:space:]]+(--platform=[^[:space:]]+[[:space:]]+)?[^[:space:]]+' -e 'update-ca-certificates|update-ca-trust|ca-certificates' . 2>/dev/null
+} | awk '{ gsub(/:\/\/[^\/@ \t"]*@/, "://<redacted>@") } length($0) > 300 { $0 = substr($0, 1, 300) "…" } NR <= 600 { print } END { print "TOTAL\t" NR + 0 }'
 ```
 
 Interpret with `fixed-versions.md`:
@@ -165,6 +167,10 @@ Interpret with `fixed-versions.md`:
 - `npm-lock`, `pipfile-lock`, `yarn-pnpm-bun`: the version is within the next
   few lines. Nested copies (`node_modules/x/node_modules/electron`) count
   separately.
+- Lockfile sections print the matching line and the next few lines (to show
+  the version), truncated to 300 characters with URL credentials redacted.
+  `package-json`, `tool-pins` and `containers` print only the matched
+  fragment. Mask anything secret-looking that still appears.
 - `requirements`, `package-json`: a range (`>=`, `^`, `~`) is not a resolved
   version: `unable_to_assess` unless a lockfile resolves it.
 - `go`: compare the `go`/`toolchain` directive with the Go branches. It is the

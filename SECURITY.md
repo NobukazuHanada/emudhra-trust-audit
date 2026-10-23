@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-The latest commit on `main` (plugin 0.3.x, skills only) receives fixes. The
+The latest commit on `main` (plugins 0.4.x, skills only) receives fixes. The
 archived Rust CLI on `archive/rust-cli` is not maintained.
 
 ## Reporting a vulnerability
@@ -28,6 +28,11 @@ secrets or personal data; incorrect indicator data.
 - Each block runs once with a 120-second timeout and prints bounded summaries
   (capped line counts, truncated fragments).
 - Repository content and command output are treated as untrusted data.
+- On Windows, CA files named by environment variables are opened only on
+  local drives; UNC and mapped network paths are refused, so no file-server
+  connection (and no automatic Windows sign-in to it) is triggered.
+- URL credentials are redacted before output, and `grep` skips FIFOs and
+  devices.
 - Project scans do not follow symbolic links or Windows reparse points.
   Endpoint scans read fixed system paths, which may themselves be links set up
   by the OS. Audit a stable local snapshot; concurrent changes are not
