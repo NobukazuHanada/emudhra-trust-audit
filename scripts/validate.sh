@@ -243,8 +243,9 @@ static_checks() {
 make_fixture() { # dir -> prints synthetic SPKI hash
   local dir=$1
   mkdir -p "$dir/proj/certs" "$dir/proj/node_modules/x"
-  openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-384 -nodes -keyout "$dir/key.pem" \
-    -out "$dir/proj/certs/ca-bundle.pem" -subj /CN=synthetic-test -days 1 >/dev/null 2>&1
+  # Relative paths: native Windows openssl builds cannot open MSYS-style /tmp paths.
+  (cd "$dir" && openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-384 -nodes -keyout key.pem \
+    -out proj/certs/ca-bundle.pem -subj /CN=synthetic-test -days 1 >/dev/null 2>&1)
   printf 'not a certificate\n' > "$dir/proj/certs/junk.crt"
   sed -n 's/^- Example: `\(.*\)`$/\1/p' "$SKILLS/project-trust-audit/references/tls-rules.md" > "$dir/proj/app.sh"
   printf 'registry=http://localhost:4873\n' >> "$dir/proj/app.sh"
@@ -252,8 +253,8 @@ make_fixture() { # dir -> prints synthetic SPKI hash
   printf '[[package]]\nname = "certifi"\nversion = "2026.10.1"\n' > "$dir/proj/uv.lock"
   printf 'go 1.26.4\n' > "$dir/proj/go.mod"
   printf 'FROM node:22.1\nRUN update-ca-certificates\n' > "$dir/proj/Dockerfile"
-  openssl x509 -in "$dir/proj/certs/ca-bundle.pem" -noout -pubkey | openssl pkey -pubin -outform DER \
-    | openssl dgst -sha256 | awk '{ print toupper($NF) }'
+  (cd "$dir" && openssl x509 -in proj/certs/ca-bundle.pem -noout -pubkey | openssl pkey -pubin -outform DER \
+    | openssl dgst -sha256) | tr -d '\r' | awk '{ print toupper($NF) }'
 }
 
 posix_checks() {

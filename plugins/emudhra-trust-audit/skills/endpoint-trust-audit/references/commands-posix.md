@@ -148,9 +148,9 @@ services, IDEs and CI. Say that E4 describes only the agent's environment.
 ```sh
 PATH=/usr/bin:/bin:/usr/sbin:/sbin; LC_ALL=C; export PATH LC_ALL
 if [ -x /usr/bin/security ]; then
-  printf 'TRUST_SETTINGS\tuser\t'; /usr/bin/security dump-trust-settings 2>/dev/null | grep -c -E 'EM (DV|OV|EV) TLS CA - G3[BC]|EM OV CS CA - G3[BC]'
-  printf 'TRUST_SETTINGS\tadmin\t'; /usr/bin/security dump-trust-settings -d 2>/dev/null | grep -c -E 'EM (DV|OV|EV) TLS CA - G3[BC]|EM OV CS CA - G3[BC]'
-  printf 'TRUST_SETTINGS\tsystem\t'; /usr/bin/security dump-trust-settings -s 2>/dev/null | grep -c -E 'EM (DV|OV|EV) TLS CA - G3[BC]|EM OV CS CA - G3[BC]'
+  printf 'TRUST_SETTINGS\tuser\t'; /usr/bin/security dump-trust-settings 2>/dev/null | awk '/EM (DV|OV|EV) TLS CA - G3[BC]|EM OV CS CA - G3[BC]/ { n++ } END { print n + 0 }'
+  printf 'TRUST_SETTINGS\tadmin\t'; /usr/bin/security dump-trust-settings -d 2>/dev/null | awk '/EM (DV|OV|EV) TLS CA - G3[BC]|EM OV CS CA - G3[BC]/ { n++ } END { print n + 0 }'
+  printf 'TRUST_SETTINGS\tsystem\t'; /usr/bin/security dump-trust-settings -s 2>/dev/null | awk '/EM (DV|OV|EV) TLS CA - G3[BC]|EM OV CS CA - G3[BC]/ { n++ } END { print n + 0 }'
 fi
 ```
 
