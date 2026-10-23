@@ -1,36 +1,52 @@
 # Contributing
 
-Use Rust 1.99.1 (stable, pinned in rust-toolchain.toml; also the declared MSRV).
-Cargo.lock is committed for reproducible dependency selection. Newer toolchains
-are not a substitute for validating the declared minimum. Keep changes narrowly
-scoped and preserve the safety invariants in AGENTS.md.
+The product is two skills under `plugins/emudhra-trust-audit/skills/`. They
+must stay pure: Markdown instructions and data only, no scripts, binaries or
+runtime requirements for users. Keep changes narrow and preserve the safety
+rules in each `SKILL.md`.
 
-Run `cargo fmt --all -- --check`, `cargo clippy --locked --all-targets -- -D warnings`,
-`cargo test --locked --all-targets`, `cargo run --locked -- data --verify`, and
-`cargo run --locked --example maintenance -- skills` before submitting changes.
-CI runs these on Linux, macOS and Windows. Unix-only FIFO/permission/link tests
-are platform gated; Windows response parsing and scope logic run on every OS.
+## Rules for skill changes
 
-Add regression tests for observable behavior rather than source wording. Tests
-must use synthetic certificates and secrets; do not upload real reports, trust
-stores, credentials or personal paths. Fixtures are not to be installed as CAs.
+- New commands go into a catalogue (`references/commands-*.md`) as constant
+  blocks: read-only, OS-standard tools only, fixed `PATH` on POSIX, no
+  untrusted value in command text, bounded output, and a clear way to tell
+  complete from incomplete results.
+- Anything not checkable with OS-standard commands is documented as
+  `unable_to_assess`, never approximated.
+- Keep `SKILL.md` under 500 lines and its `description` under 1,024
+  characters; `name` must equal the folder name.
+- Never use symbolic links. Shared files are copied: `indicators.md`,
+  `fixed-versions.md` and `report-template.md` must be byte-identical in both
+  skills, and CI checks this.
 
-Indicator updates need a source URL, retrieval/as-of date and dataset version.
-Recheck vendor sources; the current version table is a dated community snapshot.
-`cargo run --locked -- data --checksums data` prints a new checksum manifest to
-stdout. Review and save it to data/checksums.json, then rebuild and verify.
-LF, CRLF and CR are equivalent for these hashes; other byte changes are detected.
-A checksum is not an authenticity signature. Runtime code never updates data.
+## Indicator and policy updates
 
-Dependencies must have an acceptable license and a specific Cargo.lock entry.
-CI uses cargo-deny for advisory, license and source checks without adding it to
-product dependencies. `cargo run --locked --example maintenance -- licenses NEW_DIR`
-checks declared license metadata and gathers third-party texts for packaging.
-Run it after `cargo fetch --locked` so all resolved sources are available. Do not
-commit generated license directories, build outputs or downloaded binaries.
+Every change needs a source URL, retrieval date, "as of" date and a new data
+version in the file header. Update both skill copies, every embedded hash
+list (the POSIX SPKI filters and the Windows blocks), and the version line in
+`report-template.md`. All indicators are currently ECDSA P-384; the Windows
+blocks hash only P-384 keys, so a different key type requires changing those
+blocks. Do not add certificate bodies whose redistribution terms are unknown.
 
-`sh scripts/package.sh TARGET ABSOLUTE_BINARY NEW_OUTPUT_DIR` prepares an archive
-with both READMEs, license notices, data and independently usable skill folders.
-The Release artifacts workflow builds five targets and SHA256SUMS. Manual runs
-upload Actions artifacts only. Pushing a v* tag publishes a GitHub Release; obtain
-explicit release authorization before creating any tag. Keep translations aligned.
+## Local checks
+
+CI runs `scripts/validate.sh`, which needs `bash`, `jq`, `awk`, `grep` and
+`openssl` (maintainer tools only; users need none of them):
+
+```sh
+bash scripts/validate.sh
+```
+
+It checks manifests, skill frontmatter and headings, links, shared-file
+copies, indicator consistency, forbidden commands in catalogue blocks, file
+types and sizes, README parity, and runs the POSIX catalogue blocks against
+synthetic fixtures. On Windows, CI also runs the PowerShell blocks.
+
+If you have Claude Code, `claude plugin validate --strict ./plugins/emudhra-trust-audit`
+and `claude plugin validate --strict .` validate the manifests.
+
+## Documentation
+
+`README.md` (English) and `README.ja.md` (Japanese) must keep the same
+sections and facts. Update `CHANGELOG.md` and bump the plugin `version` in
+both manifests for user-visible changes.

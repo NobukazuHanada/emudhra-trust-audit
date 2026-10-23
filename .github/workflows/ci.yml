@@ -1,50 +1,24 @@
-name: Rust checks
+name: Skill checks
 on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  test:
+  posix:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@1.99.1
-        with:
-          components: rustfmt, clippy
-      - run: cargo fmt --all -- --check
-      - run: cargo clippy --locked --all-targets -- -D warnings
-      - run: cargo test --locked --all-targets
-      - run: cargo run --locked -- data --verify
-      - run: cargo run --locked --example maintenance -- skills
-      - run: cargo fetch --locked
-      - run: cargo run --locked --example maintenance -- licenses target/license-check
-      - name: Verify skill wrapper
-        shell: bash
-        run: |
-          export EMUDHRA_TRUST_AUDIT_BIN="$PWD/target/debug/emudhra-trust-audit"
-          if [ "$RUNNER_OS" = Windows ]; then export EMUDHRA_TRUST_AUDIT_BIN="$EMUDHRA_TRUST_AUDIT_BIN.exe"; fi
-          mkdir -p "$RUNNER_TEMP/empty-audit-project"
-          set +e
-          sh skills/project-trust-audit/run.sh "$RUNNER_TEMP/empty-audit-project" --format json
-          result=$?
-          set -e
-          test "$result" -eq 1
-      - name: Verify PowerShell wrapper
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $env:EMUDHRA_TRUST_AUDIT_BIN = "$pwd/target/debug/emudhra-trust-audit.exe"
-          & ./skills/project-trust-audit/run.ps1 "$env:RUNNER_TEMP/empty-audit-project" --format json
-          if ($LASTEXITCODE -ne 1) { throw 'Unexpected wrapper exit code' }
-          exit 0
-  dependencies:
-    runs-on: ubuntu-22.04
+      - name: Static checks and POSIX catalogue blocks
+        run: bash scripts/validate.sh posix
+  windows:
+    runs-on: windows-latest
+    env:
+      MSYS_NO_PATHCONV: "1"
     steps:
       - uses: actions/checkout@v5
-      - uses: EmbarkStudios/cargo-deny-action@v2
-        with:
-          command: check
-          rust-version: "1.99.1"
+      - name: Windows PowerShell catalogue blocks (via Git Bash, as documented)
+        shell: bash
+        run: bash scripts/validate.sh windows

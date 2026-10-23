@@ -1,35 +1,44 @@
 # Security policy
 
-The Rust 0.2.x line receives fixes. Use GitHub's Security → Report a vulnerability
-if private reporting is available; otherwise request a private contact in a
-minimal issue without sensitive details. Never publish credentials, personal
-paths, trust-store exports or raw reports. Include the tool/data versions, OS,
-finding ID and a synthetic reproduction.
+## Supported versions
 
-Default audits are read-only and offline. No project script or runtime is invoked.
-Explicit --commands probes trust installed tools, PATH and startup configuration;
-those tools can write or communicate. The scanner does not sandbox them. Each
-probe has a 10-second deadline and a 16 MiB stdout limit. Child process trees are
-not fully isolated. --network-test is an additional explicit opt-in using an
-installed OpenSSL client. Network-mounted reads can cause OS-level traffic.
+The latest commit on `main` (plugin 0.3.x, skills only) receives fixes. The
+archived Rust CLI on `archive/rust-cli` is not maintained.
 
-Project reads reject traversal, symlinks/reparse points and special files and
-recheck containment at read time. Unix opens use O_NOFOLLOW/O_NONBLOCK; Windows
-opens reparse points without following them. These checks are not an atomic
-sandbox against concurrent replacement of parent directories. Audit stable local
-snapshots. Endpoint system CA symlinks are followed intentionally.
+## Reporting a vulnerability
 
-Default project bounds are 20,000 directory entries and 1 MiB per file. Endpoint
-bundles and probe stdout are limited to 16 MiB. Invalid UTF-8 and incomplete
-certificates produce gaps. Custom --data-dir content is trusted operator input;
-its hashes detect inconsistency, not replacement of both data and checksums.
+Use GitHub's **Security → Report a vulnerability** if private reporting is
+available. Otherwise open a minimal issue asking for a private contact,
+without details. Never publish credentials, personal paths, trust-store
+exports or raw audit output. Include the plugin and data versions, OS, agent
+(Claude Code or Codex) and a synthetic reproduction.
 
-Reports withhold raw source, arbitrary filenames, certificate subjects and
-unrecognized version strings. Paths use opaque hashes, which still allow
-correlation and are not encryption. Sharing reports with online assistants is a
-separate transmission. Explicit --output creates a new file and refuses overwrite.
+Relevant issues include: a catalogue command that can modify state, reach the
+network, follow links unexpectedly or embed untrusted input in command text;
+wording that lets repository content steer the agent; output that leaks
+secrets or personal data; incorrect indicator data.
 
-No scan establishes effective trust across all clients or proves credentials
-were never intercepted. Binaries are not currently signed/notarized; SHA256SUMS
-checks download integrity against the published manifest, not publisher identity
-independently of GitHub. Review release provenance and operating-system warnings.
+## Security model
+
+- The skills are instructions and data. Enforcement is the agent's own
+  permission system: review each command before approving it.
+- Catalogue commands are constant text. File contents are passed on standard
+  input; file names reach programs only through `find -exec`. `PATH` is fixed
+  to OS directories on Linux and macOS.
+- Each block runs once with a 120-second timeout and prints bounded summaries
+  (capped line counts, truncated fragments).
+- Repository content and command output are treated as untrusted data.
+- Project scans do not follow symbolic links or Windows reparse points.
+  Endpoint scans read fixed system paths, which may themselves be links set up
+  by the OS. Audit a stable local snapshot; concurrent changes are not
+  isolated.
+- A crafted file can contain a line beginning `FILE<TAB>` and so mislabel
+  which file an SPKI match came from. The match itself cannot be forged by
+  file content.
+- The indicator data is a reviewed snapshot without signatures. Verify
+  changes to `references/indicators.md` against the cited sources.
+
+## Out of scope
+
+No audit here proves that a forged certificate was never accepted or that no
+credential was intercepted. The skills are not a malware scanner.

@@ -2,157 +2,185 @@
 
 # emudhra-trust-audit
 
-**Unofficial and independent. This project is not affiliated with, endorsed by or operated by eMudhra.**
+**Unofficial and independent. Not affiliated with, endorsed by or operated by eMudhra, Anthropic or OpenAI.**
 
-A Rust command-line auditor for the [eMudhra intermediate CA key incident](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449), with two skills for Claude Code and Codex. The executable includes its indicator data. **Users do not need Python, Rust, Cargo or another language runtime.** This is not a malware scanner, and “not detected” is not proof of safety.
+Two read-only agent skills for Claude Code and Codex that check exposure to the
+2026 [eMudhra weak intermediate CA key incident](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449).
+They are plain instructions and data (`SKILL.md` plus Markdown references).
+**Installing them needs no Python, Node.js, Rust, package or downloaded binary.**
+The agent runs fixed, read-only commands that ship with the operating system.
 
-- **endpoint-trust-audit**: inspect this machine's CA bundles, TLS overrides and client configuration; optionally query OS stores and installed tools.
-- **project-trust-audit**: inspect a repository's dependencies, lockfiles, CA bundles, tool pins, containers, CI and TLS settings without running project code.
+- **endpoint-trust-audit**: this computer. Hashes certificates in system CA
+  bundles, OS trust stores, keychains and CA override files and compares them
+  with the eight compromised SPKI SHA-256 values; checks the OS CA package
+  version and TLS-disabling settings.
+- **project-trust-audit**: a repository. Hashes vendored CA bundles, finds TLS
+  verification bypasses and custom CA overrides in code, configuration,
+  containers and CI, and compares lockfile and tool-pin versions with fixed
+  versions. Never runs project code.
 
-Default audits only read local files. They do not download data, send reports, modify trust stores, install packages or perform remediation. Explicit `--output` creates a new report file and refuses to overwrite an existing file.
+This is not a malware scanner. **"Not detected" does not mean safe.**
 
-## Platforms and distribution
+## Install
 
-| Platform | Archive target |
+### Claude Code
+
+```sh
+claude plugin install emudhra-trust-audit --marketplace NobukazuHanada/emudhra-trust-audit
+```
+
+Inside a session, the same works as
+`/plugin install emudhra-trust-audit --marketplace NobukazuHanada/emudhra-trust-audit`.
+On older Claude Code versions use two steps:
+
+```sh
+claude plugin marketplace add NobukazuHanada/emudhra-trust-audit
+claude plugin install emudhra-trust-audit@emudhra-trust-audit
+```
+
+### Codex
+
+```sh
+codex plugin marketplace add NobukazuHanada/emudhra-trust-audit
+codex plugin add emudhra-trust-audit@emudhra-trust-audit
+```
+
+### Without a plugin system
+
+Copy the two folders under `plugins/emudhra-trust-audit/skills/` into your
+personal skills directory: `~/.claude/skills/` for Claude Code or
+`~/.agents/skills/` for Codex. Each folder is self-contained.
+
+## Update
+
+| Tool | Commands |
 | --- | --- |
-| macOS Apple Silicon | `aarch64-apple-darwin` |
-| macOS Intel | `x86_64-apple-darwin` |
-| Linux x86_64 | `x86_64-unknown-linux-musl` |
-| Linux arm64 | `aarch64-unknown-linux-musl` |
-| Windows x86_64 | `x86_64-pc-windows-msvc` |
+| Claude Code | `claude plugin marketplace update emudhra-trust-audit`, then `claude plugin update emudhra-trust-audit@emudhra-trust-audit` (restart the session) |
+| Codex | `codex plugin marketplace upgrade emudhra-trust-audit`, then `codex plugin add emudhra-trust-audit@emudhra-trust-audit` |
+| Manual copy | Replace the two copied folders |
 
-Linux release builds use musl to avoid a glibc-version dependency. macOS and Windows use their standard OS facilities. CI covers hosted Linux, macOS and Windows; it does not guarantee every historical OS release, enterprise policy or real trust store. Binaries are not currently signed or notarized.
+## Uninstall
 
-Download the matching archive and `SHA256SUMS` from [GitHub Releases](https://github.com/NobukazuHanada/emudhra-trust-audit/releases). Verify the archive's SHA-256 against its line in the manifest before extracting it. For example:
+| Tool | Commands |
+| --- | --- |
+| Claude Code | `claude plugin uninstall emudhra-trust-audit@emudhra-trust-audit`, then `claude plugin marketplace remove emudhra-trust-audit` |
+| Codex | `codex plugin remove emudhra-trust-audit@emudhra-trust-audit`, then `codex plugin marketplace remove emudhra-trust-audit` |
+| Manual copy | Delete the two copied folders |
 
-```sh
-# Linux
-sha256sum emudhra-trust-audit-x86_64-unknown-linux-musl.tar.gz
-# macOS
-shasum -a 256 emudhra-trust-audit-aarch64-apple-darwin.tar.gz
-```
+## Use
 
-```powershell
-# Windows PowerShell
-Get-FileHash .\emudhra-trust-audit-x86_64-pc-windows-msvc.tar.gz -Algorithm SHA256
-tar -xf .\emudhra-trust-audit-x86_64-pc-windows-msvc.tar.gz
-```
+Ask in plain language, for example "Does this computer still trust the
+compromised eMudhra CA keys?" or "Audit this repository for the eMudhra CA
+incident."
 
-On macOS/Linux use `tar -xzf ARCHIVE.tar.gz`. Run the extracted executable directly, or put it in a trusted directory on PATH. Keep licenses and notices when redistributing it. Never pipe an unreviewed download into a shell. SHA-256 checks integrity against the manifest, not authenticity independently of GitHub.
+- Claude Code: the skills load automatically when relevant, or call them
+  directly with `/emudhra-trust-audit:endpoint-trust-audit` and
+  `/emudhra-trust-audit:project-trust-audit`.
+- Codex: the skills load automatically when relevant; you can also name
+  `endpoint-trust-audit` or `project-trust-audit` in the request.
 
-**The Rust migration does not itself publish a tag or Release.** Until a tagged release is published, use a source build or the `release-assets-with-checksums` artifact from a successful manual [Release artifacts workflow](https://github.com/NobukazuHanada/emudhra-trust-audit/actions/workflows/release.yml). Manual runs build archives only; they do not publish a Release.
+For a project audit, start the agent in the repository root. Claude Code and
+Codex ask for approval before running commands, according to your permission
+settings; review each command.
 
-## Build from source
+## Permissions
 
-Developers need the [Rust toolchain](https://rust-lang.org/tools/install/), not Python. Stable Rust **1.99.1** is pinned in `rust-toolchain.toml` and is the declared minimum supported Rust version (MSRV). Build dependencies are locked in `Cargo.lock`; builds may download them.
+The agent runs only the command blocks in each skill's `references/` catalogue,
+verbatim:
 
-```sh
-git clone https://github.com/NobukazuHanada/emudhra-trust-audit.git
-cd emudhra-trust-audit
-cargo build --locked --release
-./target/release/emudhra-trust-audit data --verify
-```
+- Linux/macOS: `sh`, `awk`, `find`, `grep`, `cat`, `openssl`, `uname`,
+  `printenv`, and where present `security` (macOS), `dpkg-query`, `rpm`,
+  `pacman` or `apk`, with `PATH` fixed to OS directories.
+- Windows: built-in Windows PowerShell 5.1 or PowerShell 7, reading
+  `Cert:\` stores, a few files, environment variables and two registry values.
 
-On Windows run `.\target\release\emudhra-trust-audit.exe`. Only the built executable is required for audits; there is no interpreter, package installation or adjacent data directory requirement. No crates.io package is published as part of this migration.
+The skills forbid installing, changing, deleting, elevating (`sudo`, run as
+administrator), executing project code, running programs outside the OS
+(such as `node` or `python`) and network access. Commands do not embed
+untrusted values: file contents are passed on standard input and file names
+only through `find`. Each block runs once with a 120-second timeout and
+prints bounded summaries. These are instructions to the agent, not a sandbox:
+your agent's own permission prompts remain the enforcement point.
 
-## Run an audit
+## Privacy
 
-```sh
-emudhra-trust-audit endpoint --format json
-emudhra-trust-audit project /path/to/project --format json
-emudhra-trust-audit data --verify
-emudhra-trust-audit explain PROJECT-TLS-VERIFY-NODE-ENV
-```
+The skills send nothing anywhere themselves. The agent does read command
+output, and that output is processed by the AI service you use (Anthropic or
+OpenAI) under its terms. To keep that small, the commands print only labels,
+counts, hashes, versions and matched setting fragments, never whole files or
+configuration lines. The report rules mask home paths, user names, secrets
+and certificate subjects. See [PRIVACY.md](PRIVACY.md).
 
-On Windows, an executable in the current directory is invoked as `.\emudhra-trust-audit.exe`. Quote paths containing spaces.
+## Results
 
-- `endpoint --bundle PATH` or `project --scan-bundle FILE`: inspect an additional explicit CA source.
-- `endpoint --commands`: opt in to trusted installed executable probes. They use fixed argument vectors, not project-controlled shell strings. Installed tools and startup hooks can nevertheless write, download or send telemetry. `--no-commands` is the default and takes precedence.
-- `endpoint --no-user-stores`: omit per-user stores and user client configuration.
-- `endpoint --network-test HOST --commands`: explicitly authorize a TLS connection through installed OpenSSL. Discloses source IP and connection metadata. Accepts a hostname or IP on port 443, not a URL or shell expression. A failed connection is not proof of CA rejection; one client/chain does not establish others' behavior.
-- `project --no-containers`: omit container-specific checks.
-- `--format json|text|sarif`: choose output. `--output NEW_FILE` explicitly saves it.
-- `--data-dir DIR`: use a reviewed external data snapshot instead of embedded data. No network update occurs.
-
-No administrator privileges are required. Unavailable stores are reported as coverage gaps.
-
-## Claude Code and Codex skills
-
-Each release archive contains `skills/endpoint-trust-audit/` and `skills/project-trust-audit/`, each with its own binary and license notices. Copy either folder **in full** to the appropriate location:
-
-| Host | Personal skills | Project skills |
-| --- | --- | --- |
-| Claude Code | `~/.claude/skills/` | `.claude/skills/` |
-| Codex | `~/.agents/skills/` | `.agents/skills/` |
-
-On Windows, `~` means your user profile. Restart the assistant session to ensure discovery. Locations follow the [Claude Code](https://code.claude.com/docs/en/skills) and [Codex](https://learn.chatgpt.com/docs/build-skills) documentation. Source skill folders do not contain binaries: build/install the CLI on a trusted PATH, or set `EMUDHRA_TRUST_AUDIT_BIN` to its absolute path before launching the assistant.
-
-In Claude Code invoke `/endpoint-trust-audit` or `/project-trust-audit`; in Codex invoke `$endpoint-trust-audit` or `$project-trust-audit`. Ask “Audit this endpoint offline” or “Audit the current project without changes.”
-
-Wrappers preserve arguments and exit codes:
-
-```sh
-sh /absolute/skill-dir/run.sh --format json          # endpoint skill
-sh /absolute/skill-dir/run.sh /path/to/project --format json  # project skill
-```
-
-```powershell
-& 'C:\absolute\endpoint-trust-audit\run.ps1' --format json
-& 'C:\absolute\project-trust-audit\run.ps1' . --format json
-```
-
-They select the explicit binary path, a bundled binary, or a trusted PATH application. A missing binary produces installation guidance and exit 3; wrappers never download anything. Do not bypass organizational execution policy: invoke the trusted CLI directly if wrappers are restricted. Audit scope remains the user's project, not the skill directory.
-
-## Output and interpretation
-
-JSON includes `schema_version`, `tool_version`, `scope`, `verdict`, `action`, `exit_code`, `findings`, `data_sources`, `notes` and `errors`. Each finding includes evidence, confidence, remediation, sources and location references.
+Each check is one of:
 
 | Status | Meaning |
 | --- | --- |
-| `known_indicator` | Exact indicator or rule match; not proof of interception |
-| `suspicious` | Heuristic requiring confirmation |
-| `not_found` | Not found within completed checks |
-| `unable_to_assess` | Incomplete evidence or unsupported/unavailable input; never a pass |
+| `known_indicator` | Exact match: compromised SPKI, TLS-disabling setting, or version below the fixed version |
+| `suspicious` | Needs human confirmation |
+| `not_found` | The check completed and found nothing (only for that check) |
+| `unable_to_assess` | Could not be checked; never a pass |
 
-| Exit | Meaning |
-| --- | --- |
-| 0 | No action identified by completed checks; not a safety guarantee |
-| 1 | Review required, including coverage gaps |
-| 2 | Action required |
-| 3 | Audit, input, integrity or output error |
+Every finding includes evidence, confidence, location, what you can do, and
+the data source. The verdict is ACTION REQUIRED, REVIEW REQUIRED, or NO
+ACTION IDENTIFIED IN COMPLETED CHECKS. Credential advice depends on evidence;
+the skills never order blanket rotation and never declare it unnecessary.
 
-`UNKNOWN` can coexist with action required. A stored key, blocklist entry or version string does not prove effective acceptance/rejection. The Rust CLI does not assert `EXPOSED` or `BLOCKED`. `INSECURE` means a recognized TLS-disabling setting was found; confirm actual use and report it first. Documentation matches are downgraded, and test fixtures still require human context.
+## Limitations
 
-Locations are opaque `file:<hash>` references, not filenames. Correlate a known project-relative path locally with `emudhra-trust-audit file-id path/to/file`. Raw source lines, personal paths, certificate subjects, proxy values and unrecognized version strings are withheld.
+- What cannot be checked with OS-standard commands is reported as
+  `unable_to_assess`: browser and NSS stores, Java keystores, runtimes with
+  built-in roots (Node.js, Go, Electron, Deno), effective chain acceptance,
+  revocation freshness, and whether an interception ever happened.
+- On Windows, only P-384 keys are hashed. All eight indicators are P-384, so
+  other key types cannot match.
+- Presence of a compromised SPKI does not prove a client accepts it.
+- Text rules can miss obfuscated settings or match harmless text.
+- Containers and WSL describe only themselves, not their host.
+- Indicator data is a dated snapshot (facts as of 2026-10-21, data version
+  2026.10.22). The skills never fetch updates.
 
-## Coverage, privacy and limitations
+## Data and sources
 
-The scanner parses PEM/DER SPKIs and trusted entries in JKS/JCEKS (without decrypting private keys or verifying the keystore password digest). macOS keychain and Windows Root/CA/Disallowed enumeration require `--commands`; Windows update-policy parsing is also covered. Default macOS/Windows audits remain file-only.
+Each skill carries `references/indicators.md`, `fixed-versions.md` and (for
+projects) `tls-rules.md`, with source URLs, retrieval dates and data
+versions. Sources are Mozilla, Google, eMudhra, Cloudflare, CISA and a
+community tracker; see [NOTICE](NOTICE).
 
-Partial parsers cover npm, Yarn, pnpm, requirements, Poetry/uv/PDM/Cargo locks, Pipfile, Composer, Bundler, Hex, Go, `.nvmrc`, `.node-version`, `.go-version`, `.tool-versions` and simple mise pins. CI runtime pins and container refresh/digest patterns are inspected. Unsupported formats, malformed data, missing lockfiles, unknown branches and non-numeric/prerelease generic versions remain gaps. This is not a general CVE/SCA scanner or a package resolver.
+## Marketplace status
 
-Project reads are bounded to 20,000 directory entries and 1 MiB per file. Links/reparse points, special files, oversized files and invalid UTF-8 are excluded and reported. Build/dependency directories are skipped. `.ca-trust-audit-ignore` remains the exclusion filename; explicit exclusions are reported. Endpoint bundles and probe output are limited to 16 MiB; probes time out after 10 seconds.
+- This repository is itself a plugin marketplace for Claude Code
+  (`.claude-plugin/marketplace.json`) and Codex
+  (`.agents/plugins/marketplace.json`). The install commands above use it.
+- It has **not** been submitted to the Anthropic plugin directory or the
+  OpenAI plugin directory. Both require submission and review by the
+  respective company, and acceptance is not guaranteed. The name contains a
+  third-party brand, which both directories review.
 
-System CA symlinks are followed intentionally. Use stable local snapshots: parent-directory replacement races are not fully isolated. Network mounts may cause OS traffic. Arbitrary external tools are not sandboxed. A container or WSL result applies only to that environment. Browser revocation, Windows CTL freshness, running-process caches, PKCS#12/PKCS#7 and effective validation across clients are not established. Python/certifi environments are not executed. Conventional certifi bundles and metadata under `VIRTUAL_ENV`/`CONDA_PREFIX` are read directly; inspect other environments through their lockfiles and explicit CA bundles.
+## Rust CLI (archived)
 
-**Sharing output with online Claude/Codex is separate from scanner networking.** For local-only handling, run the CLI and keep reports off external services. Opaque path hashes permit correlation and are not encryption. Do not have an assistant read raw files into chat to defeat redaction. Actual assistant discovery and real-device policies still require deployment-specific validation.
+The previous standalone Rust command-line tool is preserved, unchanged, on the
+[`archive/rust-cli`](https://github.com/NobukazuHanada/emudhra-trust-audit/tree/archive/rust-cli)
+branch (commit `3233891a5578630200f95ccbd74577553e2b4845`). It is no longer
+maintained on `main`, and no binary release was published.
 
-## Remediation and data
+## Repository layout
 
-Update OS trust packages, browsers, runtimes and independent bundles through official channels. Restart processes; rebuild and redeploy virtual environments, CI/container images and applications. Never disable TLS verification or indiscriminately delete related roots. The audit never performs these changes. Scope credential rotation to evidence of actual connections, authentication and interception; neither blanket rotation nor blanket non-rotation follows from this scan.
-
-Indicators and rules stay in `data/` with sources, dates and versions. SHA-256 normalizes CRLF/CR to LF; other byte changes are detected. These are consistency checks, not signatures. Embedded data is updated by reviewed commits and a new binary, never runtime fetches. Much of the fixed-version table is a 2026-10-21 [community-tracker](https://emudhra.we-have-a-problem.com/) snapshot; recheck vendor notices when maintaining it. See [AUDIT.md](AUDIT.md) for migration differences and remaining risks.
-
-## Development, releases and license
-
-```sh
-cargo fmt --all -- --check
-cargo clippy --locked --all-targets -- -D warnings
-cargo test --locked --all-targets
-cargo run --locked -- data --verify
-cargo run --locked --example maintenance -- skills
+```text
+.claude-plugin/marketplace.json      Claude Code marketplace
+.agents/plugins/marketplace.json     Codex marketplace
+plugins/emudhra-trust-audit/         the plugin
+  .claude-plugin/plugin.json         Claude Code manifest
+  .codex-plugin/plugin.json          Codex manifest
+  skills/endpoint-trust-audit/       SKILL.md + references/
+  skills/project-trust-audit/        SKILL.md + references/
+scripts/validate.sh                  CI checks (maintainers only)
 ```
 
-CI also runs cargo-deny for advisories, licenses and dependency sources. This adds no product runtime dependency. Release packaging includes the locked dependencies' license texts. The release workflow builds the five targets above, tests their binaries and generates archive `SHA256SUMS`; a `v*` tag publishes a Release, while manual runs only upload Actions artifacts. Do not create a release tag without explicit authorization.
+## Contributing, security and license
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [VALIDATION.md](VALIDATION.md) and [CHANGELOG.md](CHANGELOG.md). Licensed under **Apache-2.0**, with [LICENSE](LICENSE), [NOTICE](NOTICE) and packaged third-party notices. Synthetic certificate fixtures contain no private keys. No affiliation with eMudhra, Anthropic, OpenAI or GitHub is implied. The former Python package/module and Python-specific build/test/skill helpers have been removed; old validation remains in Git history.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and
+[CHANGELOG.md](CHANGELOG.md). Licensed under [Apache-2.0](LICENSE).
+"eMudhra" and "emSign" are marks of eMudhra Limited, used only to identify the
+affected certificate authority.

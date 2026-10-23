@@ -2,157 +2,139 @@
 
 # emudhra-trust-audit
 
-**非公式の独立したプロジェクトです。eMudhraとは提携しておらず、同社が運営・推奨するツールでもありません。**
+**非公式・独立したプロジェクトです。eMudhra、Anthropic、OpenAI とは提携しておらず、承認や運営も受けていません。**
 
-[eMudhra中間CA鍵の問題](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449)を調査するRust製CLIと、Claude Code／Codex向けの2スキルです。実行ファイルにIOCデータを同梱しています。**利用者はPython・Rust・Cargoなどの言語ランタイムを導入する必要がありません。** マルウェア検査ではなく、「検出なし」は安全の証明でもありません。
+2026年の [eMudhra 中間 CA 弱鍵インシデント](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449) の影響を調べる、Claude Code と Codex 向けの読み取り専用スキル2つです。
+中身は手順とデータ（`SKILL.md` と Markdown の参照資料）だけです。
+**導入に Python、Node.js、Rust、パッケージ、ダウンロードするバイナリは要りません。**
+エージェントは OS に標準で入っている読み取り専用コマンドを、決められた形で実行します。
 
-- **endpoint-trust-audit**：端末のCAバンドル、TLS上書き設定、クライアント設定を調査し、明示的な許可があればOSストアや導入済みツールも照会します。
-- **project-trust-audit**：プロジェクト内の依存、ロックファイル、CAバンドル、ツール指定、コンテナ、CI、TLS設定を、プロジェクトのコードを実行せず調査します。
+- **endpoint-trust-audit**：このコンピューターを調べます。システムの CA バンドル、OS の信頼ストア、キーチェーン、CA 上書きファイルの証明書をハッシュ化し、侵害された8つの SPKI SHA-256 値と照合します。OS の CA パッケージのバージョンと、TLS 検証を無効にする設定も確認します。
+- **project-trust-audit**：リポジトリを調べます。同梱された CA バンドルをハッシュ化し、コード・設定・コンテナ・CI にある TLS 検証の回避や独自 CA の上書きを探します。ロックファイルとツール指定のバージョンも修正版と比べます。プロジェクトのコードは実行しません。
 
-既定の監査はローカルファイルの読取りだけです。データ取得、報告送信、信頼ストア変更、パッケージ導入、自動修復は行いません。`--output` を明示した場合だけ新規レポートを保存し、既存ファイルは上書きしません。
+マルウェアスキャナーではありません。**「検出なし」は安全の保証ではありません。**
 
-## 対応環境と配布
+## 導入
 
-| 環境 | アーカイブのターゲット名 |
+### Claude Code
+
+```sh
+claude plugin install emudhra-trust-audit --marketplace NobukazuHanada/emudhra-trust-audit
+```
+
+セッション内では `/plugin install emudhra-trust-audit --marketplace NobukazuHanada/emudhra-trust-audit` でも同じです。
+古い Claude Code では次の2段階で導入します。
+
+```sh
+claude plugin marketplace add NobukazuHanada/emudhra-trust-audit
+claude plugin install emudhra-trust-audit@emudhra-trust-audit
+```
+
+### Codex
+
+```sh
+codex plugin marketplace add NobukazuHanada/emudhra-trust-audit
+codex plugin add emudhra-trust-audit@emudhra-trust-audit
+```
+
+### プラグイン機能を使わない場合
+
+`plugins/emudhra-trust-audit/skills/` の下にある2つのフォルダを、個人用スキルのディレクトリへコピーします。Claude Code は `~/.claude/skills/`、Codex は `~/.agents/skills/` です。各フォルダは単体で動きます。
+
+## 更新
+
+| ツール | コマンド |
 | --- | --- |
-| macOS Apple Silicon | `aarch64-apple-darwin` |
-| macOS Intel | `x86_64-apple-darwin` |
-| Linux x86_64 | `x86_64-unknown-linux-musl` |
-| Linux arm64 | `aarch64-unknown-linux-musl` |
-| Windows x86_64 | `x86_64-pc-windows-msvc` |
+| Claude Code | `claude plugin marketplace update emudhra-trust-audit` の後に `claude plugin update emudhra-trust-audit@emudhra-trust-audit`（セッションを再起動） |
+| Codex | `codex plugin marketplace upgrade emudhra-trust-audit` の後に `codex plugin add emudhra-trust-audit@emudhra-trust-audit` |
+| 手動コピー | コピーした2つのフォルダを置き換える |
 
-Linux配布版はmuslを使い、glibcのバージョンに依存しない構成です。macOSとWindowsでは標準のOS機能を使います。CIはホストされたLinux・macOS・Windowsで検証しますが、過去の全OSバージョン、企業ポリシー、実ストアでの動作を保証しません。バイナリの署名・公証は現時点では行っていません。
+## 削除
 
-[GitHub Releases](https://github.com/NobukazuHanada/emudhra-trust-audit/releases)から環境に合うアーカイブと `SHA256SUMS` を取得し、展開前にSHA-256を一覧の該当行と照合してください。例：
-
-```sh
-# Linux
-sha256sum emudhra-trust-audit-x86_64-unknown-linux-musl.tar.gz
-# macOS
-shasum -a 256 emudhra-trust-audit-aarch64-apple-darwin.tar.gz
-```
-
-```powershell
-# Windows PowerShell
-Get-FileHash .\emudhra-trust-audit-x86_64-pc-windows-msvc.tar.gz -Algorithm SHA256
-tar -xf .\emudhra-trust-audit-x86_64-pc-windows-msvc.tar.gz
-```
-
-macOS／Linuxでは `tar -xzf ARCHIVE.tar.gz` で展開します。実行ファイルを直接起動するか、信頼できるPATH上のディレクトリへ置いてください。再配布時はライセンスと帰属表示を保持してください。未確認のダウンロードをシェルへ直接流し込まないでください。SHA-256は一覧との整合性を確認するもので、GitHubとは独立した発行者の真正性証明ではありません。
-
-**Rustへの移行作業自体ではタグやReleaseを公開しません。** タグ付きReleaseが公開されるまではソースからビルドするか、手動の [Release artifactsワークフロー](https://github.com/NobukazuHanada/emudhra-trust-audit/actions/workflows/release.yml)が成功したrunの `release-assets-with-checksums` を利用してください。手動実行はアーカイブ生成だけで、Releaseを公開しません。
-
-## ソースからビルド
-
-開発者は[Rustツールチェーン](https://rust-lang.org/tools/install/)を用意します。Pythonは不要です。安定版 **Rust 1.99.1** を `rust-toolchain.toml` で固定し、最小対応Rustバージョン（MSRV）も1.99.1としています。ビルド依存は `Cargo.lock` に固定しており、ビルド時にダウンロードする場合があります。
-
-```sh
-git clone https://github.com/NobukazuHanada/emudhra-trust-audit.git
-cd emudhra-trust-audit
-cargo build --locked --release
-./target/release/emudhra-trust-audit data --verify
-```
-
-Windowsでは `.\target\release\emudhra-trust-audit.exe` を実行します。監査に必要なのはビルド済み実行ファイルだけで、インタープリター、パッケージ導入、隣接するデータディレクトリは不要です。この移行ではcrates.ioへのパッケージ公開も行いません。
-
-## 監査を実行する
-
-```sh
-emudhra-trust-audit endpoint --format json
-emudhra-trust-audit project /path/to/project --format json
-emudhra-trust-audit data --verify
-emudhra-trust-audit explain PROJECT-TLS-VERIFY-NODE-ENV
-```
-
-Windowsでカレントディレクトリにある実行ファイルを使う場合は `.\emudhra-trust-audit.exe` と指定します。空白を含むパスは引用符で囲んでください。
-
-- `endpoint --bundle PATH`／`project --scan-bundle FILE`：明示した追加CAソースを検査します。
-- `endpoint --commands`：信頼できる導入済み実行ファイルの照会を許可します。プロジェクト由来のシェル文字列ではなく、固定の引数列を使用します。ただしツール自身や起動フックは書込み・ダウンロード・テレメトリー送信を行う可能性があります。既定の `--no-commands` が優先されます。
-- `endpoint --no-user-stores`：ユーザー別ストアとユーザーのクライアント設定を除外します。
-- `endpoint --network-test HOST --commands`：導入済みOpenSSLによるTLS接続を明示的に許可します。送信元IPなどの接続情報が相手に伝わります。443番ポートのホスト名・IPを受け付け、URLやシェル式は受け付けません。接続失敗はCA拒否の証明ではなく、1クライアント・1チェーンの結果を他へ一般化できません。
-- `project --no-containers`：コンテナ固有検査を省きます。
-- `--format json|text|sarif`：出力形式を選択します。`--output NEW_FILE` で明示的に保存できます。
-- `--data-dir DIR`：同梱データの代わりに、レビュー済みの外部データを使います。ネットワーク更新は行いません。
-
-管理者権限は不要です。読めないストアは検査不足として報告します。
-
-## Claude Code／Codexのスキル
-
-各配布アーカイブには `skills/endpoint-trust-audit/` と `skills/project-trust-audit/` があり、それぞれにバイナリとライセンスを同梱します。必要なフォルダを**丸ごと**以下へコピーしてください。
-
-| ホスト | 個人用 | プロジェクト用 |
-| --- | --- | --- |
-| Claude Code | `~/.claude/skills/` | `.claude/skills/` |
-| Codex | `~/.agents/skills/` | `.agents/skills/` |
-
-Windowsの `~` はユーザープロファイルです。確実に再検出させるにはアシスタントのセッションを再起動してください。場所は [Claude Code](https://code.claude.com/docs/en/skills) と [Codex](https://learn.chatgpt.com/docs/build-skills) の公式資料に基づきます。ソースのスキルフォルダにはバイナリを含まないため、CLIをビルドして信頼できるPATHに置くか、アシスタント起動前に `EMUDHRA_TRUST_AUDIT_BIN` へ絶対パスを設定してください。
-
-Claude Codeでは `/endpoint-trust-audit`／`/project-trust-audit`、Codexでは `$endpoint-trust-audit`／`$project-trust-audit` を指定し、「端末をオフラインで検査」「現在のプロジェクトを変更せず検査」と依頼します。
-
-ラッパーは引数と終了コードを保持します。
-
-```sh
-sh /absolute/skill-dir/run.sh --format json          # endpoint skill
-sh /absolute/skill-dir/run.sh /path/to/project --format json  # project skill
-```
-
-```powershell
-& 'C:\absolute\endpoint-trust-audit\run.ps1' --format json
-& 'C:\absolute\project-trust-audit\run.ps1' . --format json
-```
-
-明示したバイナリ、同梱バイナリ、信頼できるPATH上のアプリケーションの順に選びます。未導入なら導入案内と終了コード3を返し、自動ダウンロードしません。組織の実行ポリシーを回避せず、ラッパーが制限される場合は信頼できるCLIを直接実行してください。検査対象はスキルのフォルダではなく、ユーザーのプロジェクトです。
-
-## 出力と解釈
-
-JSONは `schema_version`、`tool_version`、`scope`、`verdict`、`action`、`exit_code`、`findings`、`data_sources`、`notes`、`errors` を含みます。各findingに根拠、信頼度、対処案、出典、位置参照を記録します。
-
-| status | 意味 |
+| ツール | コマンド |
 | --- | --- |
-| `known_indicator` | IOC・規則との一致。傍受の証明ではない |
-| `suspicious` | 確認が必要なヒューリスティック |
-| `not_found` | 実施できた検査では見つからない |
-| `unable_to_assess` | 証拠不足・未対応・読取り不可。合格ではない |
+| Claude Code | `claude plugin uninstall emudhra-trust-audit@emudhra-trust-audit` の後に `claude plugin marketplace remove emudhra-trust-audit` |
+| Codex | `codex plugin remove emudhra-trust-audit@emudhra-trust-audit` の後に `codex plugin marketplace remove emudhra-trust-audit` |
+| 手動コピー | コピーした2つのフォルダを削除する |
 
-| 終了コード | 意味 |
+## 使い方
+
+普通の言葉で頼んでください。例：「このコンピューターは侵害された eMudhra の CA 鍵をまだ信頼していますか？」「このリポジトリを eMudhra CA インシデントの観点で監査して」。
+
+- Claude Code：関係する質問ではスキルが自動で読み込まれます。`/emudhra-trust-audit:endpoint-trust-audit` と `/emudhra-trust-audit:project-trust-audit` で直接呼ぶこともできます。
+- Codex：関係する質問ではスキルが自動で読み込まれます。依頼文で `endpoint-trust-audit` や `project-trust-audit` を名指しすることもできます。
+
+プロジェクトを監査するときは、リポジトリのルートでエージェントを起動してください。Claude Code と Codex は、権限設定に応じてコマンド実行前に承認を求めます。各コマンドを確認してください。
+
+## 権限
+
+エージェントが実行するのは、各スキルの `references/` にあるコマンド集のブロックだけで、書き換えずにそのまま実行します。
+
+- Linux/macOS：`sh`、`awk`、`find`、`grep`、`cat`、`openssl`、`uname`、`printenv`。存在する場合は `security`（macOS）、`dpkg-query`、`rpm`、`pacman`、`apk` も使います。`PATH` は OS のディレクトリに固定します。
+- Windows：標準の Windows PowerShell 5.1 か PowerShell 7 を使い、`Cert:\` ストア、いくつかのファイル、環境変数、レジストリ値2つを読みます。
+
+スキルは次のことを禁止しています：インストール、変更、削除、権限昇格（`sudo` や管理者として実行）、プロジェクトのコードの実行、OS 以外のプログラム（`node` や `python` など）の実行、ネットワークアクセス。
+コマンドに信頼できない値を埋め込むこともしません。ファイルの中身は標準入力で渡し、ファイル名は `find` 経由でのみ渡します。
+各ブロックは1回だけ、120秒のタイムアウト付きで実行し、量を制限した要約だけを出力します。
+これらはエージェントへの指示であって、サンドボックスではありません。実際に止める役目は、お使いのエージェント自身の権限確認です。
+
+## プライバシー
+
+スキル自体は何も外部へ送信しません。ただしエージェントはコマンドの出力を読み、その出力は利用中の AI サービス（Anthropic または OpenAI）がそれぞれの規約に従って処理します。
+送られる量を減らすため、コマンドが出力するのはラベル、件数、ハッシュ、バージョン、一致した設定の断片だけです。ファイル全体や設定行は出力しません。
+報告のルールでは、ホームのパス、ユーザー名、秘密情報、証明書のサブジェクトを伏せます。詳しくは [PRIVACY.md](PRIVACY.md) を参照してください。
+
+## 判定
+
+各チェックの結果は次のいずれかです。
+
+| 状態 | 意味 |
 | --- | --- |
-| 0 | 実施済み検査から追加対策なし。安全保証ではない |
-| 1 | 検査不足を含む要確認 |
-| 2 | 要対策 |
-| 3 | 監査・入力・整合性・出力エラー |
+| `known_indicator` | 完全一致：侵害された SPKI、TLS 検証を無効にする設定、修正版より古いバージョン |
+| `suspicious` | 人による確認が必要 |
+| `not_found` | チェックを最後まで実行し、何も見つからなかった（そのチェックの範囲に限る） |
+| `unable_to_assess` | 確認できなかった。合格の意味には決してならない |
 
-`UNKNOWN` と要対策は両立します。鍵の保存、ブロックリスト、バージョンだけで実効受理・拒否を証明できません。Rust CLIは `EXPOSED`／`BLOCKED` を断定しません。`INSECURE` は既知のTLS無効化設定が見つかったことを示すので、実際の用途を確認し最初に報告します。ドキュメント上の記述は重要度を下げ、テスト用の設定も人が用途を確認します。
+各所見には、根拠、信頼度、場所、利用者が取れる対策、データの出典が付きます。総合判定は ACTION REQUIRED（対応が必要）、REVIEW REQUIRED（確認が必要）、NO ACTION IDENTIFIED IN COMPLETED CHECKS（完了したチェックでは対応事項なし）のいずれかです。
+認証情報についての助言は根拠に応じて変わります。一律のローテーションを指示することも、不要だと断言することもありません。
 
-位置はファイル名ではなく `file:<hash>` 形式です。既知のプロジェクト相対パスは、ローカルで `emudhra-trust-audit file-id path/to/file` を実行すると照合できます。生のソース行、個人パス、証明書subject、プロキシ値、認識できないバージョン文字列は出力しません。
+## 限界
 
-## 検査範囲・プライバシー・限界
+- OS 標準コマンドで確認できないものは `unable_to_assess` として報告します：ブラウザーや NSS のストア、Java のキーストア、ルート証明書を内蔵するランタイム（Node.js、Go、Electron、Deno）、実際にチェーンが受け入れられるかどうか、失効情報の鮮度、傍受が実際に起きたかどうか。
+- Windows では P-384 の鍵だけをハッシュ化します。8つの指標はすべて P-384 なので、他の鍵種別が一致することはありません。
+- 侵害された SPKI が存在していても、クライアントがそれを受け入れることの証明にはなりません。
+- テキストのルールは、難読化された設定を見逃したり、無害な文字列に一致したりすることがあります。
+- コンテナや WSL での結果は、それ自身についてだけで、ホストの状態は表しません。
+- 指標データは日付つきのスナップショットです（事実は 2026-10-21 時点、データ版 2026.10.22）。スキルが更新を取得することはありません。
 
-PEM／DERのSPKIとJKS／JCEKSの信頼証明書エントリを解析します。秘密鍵の復号やキーストアのパスワードダイジェスト検証はしません。macOSキーチェーン、WindowsのRoot／CA／Disallowed列挙は `--commands` が必要で、Windows更新ポリシーも解析します。macOS／Windowsの既定動作はファイル検査です。
+## データと出典
 
-npm、Yarn、pnpm、requirements、Poetry／uv／PDM／Cargoのロック、Pipfile、Composer、Bundler、Hex、Go、`.nvmrc`、`.node-version`、`.go-version`、`.tool-versions`、単純なmise指定の部分的パーサーを持ちます。CIのランタイム指定、コンテナのCA更新・ダイジェスト固定も調べます。未対応形式、不正データ、ロック欠落、未知のブランチ、数値以外やプレリリースを含む汎用バージョンは検査不足とします。一般的なCVE／SCAスキャナーや依存リゾルバーではありません。
+各スキルには `references/indicators.md` と `fixed-versions.md` が入っており、プロジェクト用にはさらに `tls-rules.md` があります。どれも出典 URL、取得日、データの版を記載しています。
+出典は Mozilla、Google、eMudhra、Cloudflare、CISA とコミュニティのトラッカーです。[NOTICE](NOTICE) を参照してください。
 
-プロジェクトは20,000ディレクトリエントリ・1ファイル1 MiBが上限です。リンク／reparse point、特殊ファイル、大きなファイル、不正UTF-8は除外して報告します。ビルド・依存ディレクトリは対象外です。除外ファイル名は `.ca-trust-audit-ignore` を維持し、明示的な除外を報告します。端末バンドルとプローブ出力は16 MiB、プローブは10秒が上限です。
+## マーケット公開の状況
 
-OSのCAシンボリックリンクは意図的に追跡します。親ディレクトリ差替えの競合を完全に隔離するものではないため、安定したローカルスナップショットを使ってください。ネットワークマウントはOS通信を発生させ得ます。外部ツールはサンドボックス化されません。コンテナ／WSLの結果はその環境だけに適用します。ブラウザの失効情報、Windows CTLの鮮度、プロセスのキャッシュ、PKCS#12／PKCS#7、全クライアントの実効検証は確立しません。Python／certifi環境は実行しません。`VIRTUAL_ENV`／`CONDA_PREFIX` 内の既知のcertifiバンドル・メタデータは直接読み取り、それ以外の環境はロックファイルと明示的なCAバンドルで別途検査します。
+- このリポジトリ自体が、Claude Code（`.claude-plugin/marketplace.json`）と Codex（`.agents/plugins/marketplace.json`）向けのプラグインマーケットプレイスになっています。上の導入コマンドはこれを使います。
+- Anthropic のプラグインディレクトリにも OpenAI のプラグインディレクトリにも、まだ申請して**いません**。どちらも各社への申請と審査が必要で、掲載される保証はありません。名前に第三者のブランドが含まれており、この点も両ディレクトリの審査対象です。
 
-**オンラインのClaude／Codexへ出力を渡す行為は、スキャナーの通信とは別です。** 完全にローカルへ閉じる場合はCLIを直接使い、外部サービスへ報告を渡さないでください。パスのハッシュは相互照合可能で、暗号化ではありません。秘匿を解除するためにアシスタントへ生ファイルを読ませないでください。実際のスキル検出・呼出しや端末ポリシーは導入先での確認が必要です。
+## Rust CLI（保存済み）
 
-## 対処とデータ
+以前の単体 Rust コマンドラインツールは、変更を加えずに [`archive/rust-cli`](https://github.com/NobukazuHanada/emudhra-trust-audit/tree/archive/rust-cli) ブランチ（コミット `3233891a5578630200f95ccbd74577553e2b4845`）に保存しています。`main` ではもう保守しておらず、バイナリのリリースも公開していません。
 
-OSの信頼パッケージ、ブラウザ、ランタイム、独自バンドルを公式経路で更新します。プロセスを再起動し、仮想環境、CI／コンテナイメージ、アプリケーションを再構築・再配備します。TLS検証の無効化や関連ルートの一律削除は行わないでください。監査はこれらの変更を自動実行しません。認証情報のローテーション対象は、実際の接続・認証・傍受の証拠で判断し、検査結果だけで「全部交換」「交換不要」と断定しません。
+## リポジトリ構成
 
-IOC・規則は `data/` に出典・日付・バージョン付きで管理します。SHA-256はCRLF／CRをLFへ正規化し、それ以外のバイト変更を検出します。整合性検査であり署名ではありません。同梱データはレビュー済みコミットと新バイナリで更新し、実行時の取得はしません。修正版表の多くは2026-10-21の[コミュニティ追跡サイト](https://emudhra.we-have-a-problem.com/)のスナップショットなので、保守時はベンダー資料を再確認してください。移行差分と残存リスクは [AUDIT.md](AUDIT.md) に記録しています。
-
-## 開発・Release・ライセンス
-
-```sh
-cargo fmt --all -- --check
-cargo clippy --locked --all-targets -- -D warnings
-cargo test --locked --all-targets
-cargo run --locked -- data --verify
-cargo run --locked --example maintenance -- skills
+```text
+.claude-plugin/marketplace.json      Claude Code 用マーケットプレイス
+.agents/plugins/marketplace.json     Codex 用マーケットプレイス
+plugins/emudhra-trust-audit/         プラグイン本体
+  .claude-plugin/plugin.json         Claude Code 用 manifest
+  .codex-plugin/plugin.json          Codex 用 manifest
+  skills/endpoint-trust-audit/       SKILL.md と references/
+  skills/project-trust-audit/        SKILL.md と references/
+scripts/validate.sh                  CI 用チェック（メンテナー専用）
 ```
 
-CIではcargo-denyでアドバイザリ、ライセンス、依存の取得元も検査します。製品実行時の依存は増えません。配布物にはロックされた依存のライセンス本文を含めます。Releaseワークフローは上記5ターゲットをビルド・実行検証し、アーカイブの `SHA256SUMS` を生成します。`v*` タグではReleaseを公開し、手動実行はActions成果物のアップロードだけです。明示的な承認なしにReleaseタグを作成しないでください。
+## 貢献・セキュリティ・ライセンス
 
-[CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.md](SECURITY.md)、[VALIDATION.md](VALIDATION.md)、[CHANGELOG.md](CHANGELOG.md)を参照してください。**Apache-2.0**で、[LICENSE](LICENSE)、[NOTICE](NOTICE)、第三者帰属表示を同梱します。合成証明書フィクスチャに秘密鍵は含みません。eMudhra、Anthropic、OpenAI、GitHubとの提携を示すものではありません。旧Pythonパッケージ／モジュール、Python固有のビルド・テスト・スキルヘルパーは削除しました。過去の検証はGit履歴に残っています。
+[CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.md](SECURITY.md)、[CHANGELOG.md](CHANGELOG.md) を参照してください。ライセンスは [Apache-2.0](LICENSE) です。
+「eMudhra」と「emSign」は eMudhra Limited の商標で、影響を受けた認証局を示すためだけに使っています。

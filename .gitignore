@@ -1,12 +1,4 @@
-/target/
-/dist/
-/build/
-/release-output/
-*.sarif
-# Legacy local build caches are never distributed.
-.venv/
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.ruff_cache/
-*.egg-info/
+# Local editor and OS files
+.DS_Store
+Thumbs.db
+*.swp

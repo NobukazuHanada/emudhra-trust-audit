@@ -1,0 +1,17 @@
+{
+  "name": "emudhra-trust-audit",
+  "description": "Unofficial community marketplace for the read-only emudhra-trust-audit skills.",
+  "owner": {
+    "name": "Nobukazu Hanada",
+    "url": "https://github.com/NobukazuHanada"
+  },
+  "plugins": [
+    {
+      "name": "emudhra-trust-audit",
+      "source": "./plugins/emudhra-trust-audit",
+      "description": "Unofficial, read-only audit skills for the 2026 eMudhra weak intermediate CA key incident (endpoint and project).",
+      "category": "security",
+      "homepage": "https://github.com/NobukazuHanada/emudhra-trust-audit"
+    }
+  ]
+}

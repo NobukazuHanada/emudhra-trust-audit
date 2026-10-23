@@ -1,28 +1,36 @@
 # Changelog
 
-## 0.2.0 — Rust migration (not yet tagged)
+## 0.3.0 — Skills-only plugin (2026-10-23)
 
-- Replace the Python product, build and test configuration with a Rust CLI using
-  stable Rust 1.99.1. Release executables need no Python or Rust installation.
-- Embed the reviewed indicator data, retaining external data overrides and
-  deterministic LF-normalized SHA-256 verification.
-- Preserve endpoint/project audits, evidence/status/confidence/remediation,
-  JSON/text/SARIF and exit codes 0–3. Preserve partial dependency parsers,
-  SPKI/JKS inspection, explicit executable probes and disclosed coverage gaps.
-- Strengthen default privacy with opaque file references, bound subprocess output
-  while collecting it, and reject Windows reparse points in project reads.
-- Replace Python skill helpers with argument-preserving POSIX/PowerShell wrappers.
-- Add five-platform release packaging, archive checksums, third-party license
-  collection and cargo-deny CI. Manual builds do not publish a release.
-- Deliberate compatibility changes: no execution of Python/certifi environments;
-  inspect explicit bundles and lockfiles instead. Prerelease/non-numeric generic
-  versions remain unknown. Network probes use one installed OpenSSL invocation
-  and never establish other clients' trust. The old Python module and data-env
-  override are removed; use --data-dir. Existing .ca-trust-audit-ignore files work.
+- Rebuild the project as two self-contained agent skills,
+  `endpoint-trust-audit` and `project-trust-audit`, packaged as one plugin
+  with Claude Code (`.claude-plugin/`) and Codex (`.codex-plugin/`)
+  manifests and repository marketplaces for both.
+- Users need no Python, Node.js, Rust, package or binary. Audits use fixed,
+  read-only OS-standard command blocks: `awk`/`openssl` SPKI hashing on Linux
+  and macOS, and built-in PowerShell on Windows (P-384 SPKI reconstruction).
+- Keep the four statuses, evidence, confidence, coverage gaps, conditional
+  credential guidance and "not detected is not safe". Indicator, policy and
+  rule data now live in each skill's `references/` with sources, dates and
+  versions. TLS rules are ported to POSIX ERE (data version 2026.10.23) with
+  a corrected `curl -k` pattern.
+- Deliberate differences from the Rust CLI: no SARIF/JSON output files, exit
+  codes or `--output`; no opt-in executable probes of non-OS tools (`node`,
+  `go`, `pip`, `claude`), no network test and no `--bundle` argument, so those
+  areas are reported as `unable_to_assess`; no opaque file hashes (relative
+  paths are shown, with masking rules); `.ca-trust-audit-ignore` is no longer
+  read.
+- Remove the Rust sources, Cargo files, tests, release workflow and packaging
+  script from `main`. The Rust CLI is preserved on `archive/rust-cli`
+  (`3233891a5578630200f95ccbd74577553e2b4845`).
+- Replace Rust CI with a lightweight validation workflow.
+
+## 0.2.0 — Rust CLI (never tagged; archived)
+
+Standalone Rust CLI with embedded indicator data and POSIX/PowerShell skill
+wrappers. Preserved on the `archive/rust-cli` branch.
 
 ## 0.1.0 — Historical implementation
 
-Introduced the two audit skills, static rules and version policies, independent
-security fixes, cross-platform newline correction and English/Japanese READMEs.
-Renamed the public repository to emudhra-trust-audit. Historical implementation
-and validation are retained in Git history; they are not proof of Rust behavior.
+Introduced the two audit skills, static rules and version policies and
+English/Japanese READMEs. Retained in Git history.

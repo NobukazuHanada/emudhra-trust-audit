@@ -1,0 +1,48 @@
+emudhra-trust-audit
+Copyright 2026 The emudhra-trust-audit contributors
+
+This product includes material developed by the emudhra-trust-audit
+contributors, licensed under the Apache License, Version 2.0. You may obtain a
+copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+-------------------------------------------------------------------------------
+Third-party material and attribution
+-------------------------------------------------------------------------------
+
+This distribution contains no third-party code, scripts, binaries or
+certificate files. It does not bundle repair scripts or compromised CA
+certificates.
+
+The indicator and remediation data in each skill's references/ directory
+records facts (public key fingerprints, certificate authority names, fixed
+package version strings, configuration patterns) transcribed by hand from the
+public sources below. Each data file states its sources, retrieval dates,
+"as of" dates and data version. The sources themselves are not redistributed;
+only citations to them.
+
+  * Mozilla Bugzilla bug 2083449 - "eMudhra: Weak keys in intermediate CA
+    certificates"
+    https://bugzilla.mozilla.org/show_bug.cgi?id=2083449
+  * Google - "Protecting Chrome and Android users from compromised eMudhra
+    intermediate CA certificates"
+    https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates
+  * eMudhra - "Certificate security incident"
+    https://emudhra.com/en/post/certificate-security-incident
+  * Cloudflare - "eMudhra certificate compromise"
+    https://blog.cloudflare.com/emudhra-certificate-compromise
+  * CISA - credential guidance
+    https://www.cisa.gov/news-events/alerts/2025/04/16/cisa-releases-guidance-credential-risks-associated-potential-legacy-oracle-cloud-compromise
+    https://www.cisa.gov/news-events/analysis-reports/ar21-134a
+  * Community advisory and remediation tracker
+    https://emudhra.we-have-a-problem.com/
+
+Trademarks: "eMudhra" and "emSign" are marks of eMudhra Limited. "Claude" and
+"Claude Code" are marks of Anthropic PBC. "Codex" and "ChatGPT" are marks of
+OpenAI. "GitHub" is a mark of GitHub, Inc. All other marks belong to their
+respective owners. This project is an independent community effort and is NOT
+affiliated with, endorsed by, or sponsored by any of them. Marks are used only
+for nominative identification of the affected certificate authority and of
+the agents the skills run in. The Apache License 2.0 grants no trademark
+rights (Section 6).
